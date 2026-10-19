@@ -9,3 +9,5 @@
 ## 2026-10-19
 - Backend desplegado por Jonathan (setup + Web App). URL puesta en web/index.html.
 - HANDOFF.md para que Claude Code pruebe la API, cree el repo y publique en GitHub Pages.
+- API probada desde terminal: `data` responde (saldo 6,600; semana 23 oct apartar 6,320). Ciclo `pagar` → `deshacer` de jaula_2026-10-23 deja el saldo en 6,600 otra vez. Token incorrecto → `Token inválido`.
+- Repo `jrbernardino/pagos` (público). GitHub Pages por Actions (`.github/workflows/pages.yml`, publica `web/`). https://jrbernardino.github.io/pagos/ — index, manifest, sw.js e íconos responden 200. Token verificado fuera del repo.

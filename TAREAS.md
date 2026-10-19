@@ -1,10 +1,12 @@
 # TAREAS — Hub de pagos
 
 ## Pendiente
-- [ ] Pegar Motor.gs / Code.gs en el Sheet, correr `setup` y desplegar como Web App
+- [x] Pegar Motor.gs / Code.gs en el Sheet, correr `setup` y desplegar como Web App
 - [ ] Ajustar en Hub_Pagos: neto real de nómina y monto/días de la transferencia de Tania
-- [ ] Publicar `web/` en GitHub Pages y agregar a pantalla de inicio
-- [ ] Probar un ciclo real: marcar Jaula (vie 23 oct) como pagada y deshacer
+- [x] Publicar `web/` en GitHub Pages (https://jrbernardino.github.io/pagos/)
+- [ ] Agregar a pantalla de inicio del iPhone y pegar el token
+- [x] Probar un ciclo real: marcar Jaula (vie 23 oct) como pagada y deshacer (vía API)
+- [ ] Agregar el bautizo en Hub_Pagos (fecha por confirmar, 12–13 dic)
 
 ## Ideas
 - [ ] Ligar Hub_Pagos con la hoja Recurrentes del tracking para no duplicar montos
