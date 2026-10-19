@@ -1,0 +1,11 @@
+# BITÁCORA — Hub de pagos
+
+## 2026-10-18
+- Primera versión: backend Apps Script + PWA.
+- Datos iniciales cargados con los pagos vigentes (renta, luz bimestral, gas y agua, Izzi, jaula, despensa, iPhone, teléfono, vuelos ×2, préstamo quincenal, préstamo de 3 mensualidades) y saldo de $6,600.
+- Motor validado en Node: los totales semanales (sin despensa) cuadran con los 14 recordatorios de viernes creados en el iPhone (23 oct – 29 ene).
+- Pendiente de confirmar: neto de nómina (default 8,400) y días/monto de la transferencia de Tania (default 2,488.13 los días 15 y 30).
+
+## 2026-10-19
+- Backend desplegado por Jonathan (setup + Web App). URL puesta en web/index.html.
+- HANDOFF.md para que Claude Code pruebe la API, cree el repo y publique en GitHub Pages.
