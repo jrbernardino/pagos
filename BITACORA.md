@@ -15,3 +15,4 @@
 - Backend v2 (`resumenSemana_` en Motor.gs; acciones `gasto` / `ingreso_extra` en Code.gs) pendiente de pegar en Apps Script y publicar como versión nueva.
 - Workflow `apps-script.yml`: despliegue del backend con clasp 2.4.2 desde Actions (push + deploy a la implementación existente + prueba de humo). Falta que Jonathan cargue los secretos.
 - Secretos cargados por Jonathan. Workflow Apps Script corrido: clasp push + deploy a la misma URL; prueba de humo OK (backend v2 responde con semanaActual).
+- v3 front: rediseño estilo glassy-dashboard (fondo negro/dorado, vidrio, Space Grotesk/Plus Jakarta). App con pestañas (Inicio, Semanas, Proyección, Movimientos) y botón + central. Gráfica interactiva (arrastrar para ver saldo y movimientos de cada día; 14/30/60 días). Semanas como carrusel con swipe. Arreglado: el botón de refrescar giraba con todo y fondo; el toast se asomaba abajo. Backend: historial de 30 movimientos. sw → pagos-v3.

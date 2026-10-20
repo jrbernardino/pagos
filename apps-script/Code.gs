@@ -183,7 +183,7 @@ function obtenerVista_() {
   vista.semanaActual = resumenSemana_(pendientes, registro.filas, saldo, hoy);
   vista.saldoFecha = cfg.saldo_fecha;
   vista.colchon = parseFloat(cfg.colchon) || 0;
-  vista.recientes = registro.filas.slice(-10).reverse().map(function (r) {
+  vista.recientes = registro.filas.slice(-30).reverse().map(function (r) {
     return { id: r.id, concepto: r.concepto, monto: r.monto, vence: r.vence, accion: r.accion };
   });
   return vista;
