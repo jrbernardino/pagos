@@ -13,3 +13,4 @@
 - Repo `jrbernardino/pagos` (público). GitHub Pages por Actions (`.github/workflows/pages.yml`, publica `web/`). https://jrbernardino.github.io/pagos/ — index, manifest, sw.js e íconos responden 200. Token verificado fuera del repo.
 - v2 (front + backend): el hero muestra "En tu banco", y de la semana lun–dom: por pagar, por entrar y saldo al domingo. Botón "+ Gasto" para registrar gastos e ingresos extra (con categorías y fecha); se pueden deshacer desde "Últimos movimientos". La app se refresca sola cada minuto mientras está abierta. `sw.js` → `pagos-v2`.
 - Backend v2 (`resumenSemana_` en Motor.gs; acciones `gasto` / `ingreso_extra` en Code.gs) pendiente de pegar en Apps Script y publicar como versión nueva.
+- Workflow `apps-script.yml`: despliegue del backend con clasp 2.4.2 desde Actions (push + deploy a la implementación existente + prueba de humo). Falta que Jonathan cargue los secretos.

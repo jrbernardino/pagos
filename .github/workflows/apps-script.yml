@@ -1,0 +1,77 @@
+name: Apps Script
+
+# Sube apps-script/ al proyecto ligado al Sheet y publica una versión nueva
+# en la MISMA implementación (la URL /exec no cambia).
+#
+# Secretos del repo:
+#   CLASPRC_JSON  contenido de ~/.clasprc.json tras `npx @google/clasp@2.4.2 login`
+#   SCRIPT_ID     ID del proyecto (Apps Script → Configuración del proyecto)
+#   HUB_TOKEN     (opcional) token de Hub_Config, para la prueba final
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps-script/**']
+  workflow_dispatch:
+
+concurrency:
+  group: apps-script
+  cancel-in-progress: false
+
+env:
+  DEPLOYMENT_ID: AKfycbwP3mtPN-LEpJLIkaJgOxllG1ISbNsKS_zTzZQ0DgGgZolN4cw3C7mvtHKCeWc0c4X6
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar sintaxis y lógica
+        run: |
+          cat apps-script/Motor.gs apps-script/Code.gs > /tmp/all.js
+          node --check /tmp/all.js
+
+      - name: Instalar clasp
+        run: npm install -g @google/clasp@2.4.2
+
+      - name: Credenciales
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$SCRIPT_ID" ]; then
+            echo "::error::Faltan los secretos CLASPRC_JSON y/o SCRIPT_ID"; exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
+          printf '{"scriptId":"%s","rootDir":"apps-script"}' "$SCRIPT_ID" > .clasp.json
+
+      - name: Subir código
+        run: clasp push --force
+
+      - name: Publicar versión nueva en la misma URL
+        run: clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "${GITHUB_SHA::7} $(date -u +%F)"
+
+      - name: Prueba de humo
+        env:
+          HUB_TOKEN: ${{ secrets.HUB_TOKEN }}
+        run: |
+          if [ -z "$HUB_TOKEN" ]; then echo "Sin HUB_TOKEN, me salto la prueba"; exit 0; fi
+          URL="https://script.google.com/macros/s/$DEPLOYMENT_ID/exec"
+          for i in 1 2 3; do
+            R=$(curl -sL "$URL?action=data&token=$HUB_TOKEN")
+            if echo "$R" | grep -q '"ok":true'; then
+              echo "$R" | grep -q '"semanaActual"' && echo "OK: backend responde con semanaActual" || echo "OK: backend responde"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::El backend no respondió ok"; echo "$R" | head -c 300; exit 1
+
+      - name: Limpiar
+        if: always()
+        run: rm -f ~/.clasprc.json .clasp.json
