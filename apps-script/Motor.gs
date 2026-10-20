@@ -44,6 +44,7 @@ function inicioSemana_(fecha) {
  *  - bimestral:   como mensual, cada 2 meses contando desde el mes de `inicio`.
  *  - semanal:     cada semana el día de `dias` (LU, MA, MI, JU, VI, SA, DO).
  *  - semanal_mes: igual que semanal, pero `monto` es mensual y se reparte entre las semanas que tenga el mes.
+ *  - unica:       una sola vez, en la fecha de `inicio`.
  */
 function generarOcurrencias_(pagos, desde, hasta) {
   var out = [];
@@ -80,6 +81,8 @@ function generarOcurrencias_(pagos, desde, hasta) {
         m++;
         if (m > 12) { m = 1; y++; }
       }
+    } else if (f === 'unica') {
+      push(p.inicio || ini, p.monto);
     } else if (f === 'semanal' || f === 'semanal_mes') {
       var objetivo = DIAS_SEMANA[String(p.dias).trim().toUpperCase().slice(0, 2)];
       if (objetivo === undefined) return;

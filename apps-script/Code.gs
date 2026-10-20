@@ -63,7 +63,7 @@ function setup() {
     sp.autoResizeColumns(1, ENC_PAGOS.length);
     var reglas = [
       SpreadsheetApp.newDataValidation().requireValueInList(['casa', 'personal', 'ingreso']).build(),
-      SpreadsheetApp.newDataValidation().requireValueInList(['mensual', 'bimestral', 'semanal', 'semanal_mes']).build()
+      SpreadsheetApp.newDataValidation().requireValueInList(FRECUENCIAS_).build()
     ];
     sp.getRange('D2:D200').setDataValidation(reglas[0]);
     sp.getRange('E2:E200').setDataValidation(reglas[1]);
@@ -141,12 +141,23 @@ function doPost(e) {
         case 'saldo': ajustarSaldo_(body.monto); break;
         case 'gasto': movimientoExtra_('gasto', body.concepto, body.monto, body.fecha); break;
         case 'ingreso_extra': movimientoExtra_('ingreso_extra', body.concepto, body.monto, body.fecha); break;
+        case 'guardar_pago': guardarPago_(body.pago || {}); break;
+        case 'borrar_pago': borrarPago_(body.id); break;
         default: throw new Error('Acción no válida');
       }
     } finally {
       lock.releaseLock();
     }
-    return obtenerVista_();
+    var vista = obtenerVista_();
+    if (body.corto) {
+      // Respuesta mínima para el atajo del iPhone
+      var s = vista.semanaActual;
+      return {
+        saldo: vista.saldo, porPagar: s.porPagar, alCierre: s.alCierre,
+        mensaje: 'Saldo ' + fmtMx_(vista.saldo) + ' · al domingo ' + fmtMx_(s.alCierre)
+      };
+    }
+    return vista;
   });
 }
 
@@ -183,6 +194,14 @@ function obtenerVista_() {
   vista.semanaActual = resumenSemana_(pendientes, registro.filas, saldo, hoy);
   vista.saldoFecha = cfg.saldo_fecha;
   vista.colchon = parseFloat(cfg.colchon) || 0;
+  var pagos = leerPagos_();
+  vista.pagos = pagos.map(function (p) {
+    var sig = pendientes.filter(function (o) { return o.pagoId === p.id && o.fecha >= hoy; })[0];
+    return {
+      id: p.id, concepto: p.concepto, monto: p.monto, tipo: p.tipo, frecuencia: p.frecuencia,
+      dias: p.dias, inicio: p.inicio, fin: p.fin, activo: p.activo, nota: p.nota, siguiente: sig ? sig.fecha : ''
+    };
+  });
   vista.recientes = registro.filas.slice(-30).reverse().map(function (r) {
     return { id: r.id, concepto: r.concepto, monto: r.monto, vence: r.vence, accion: r.accion };
   });
@@ -241,6 +260,78 @@ function movimientoExtra_(accion, concepto, monto, fecha) {
   hojaReg_().appendRow([new Date(), id, c, m, f, accion, saldo]);
 }
 
+// ───────────────────────── Catálogo de pagos (Hub_Pagos) ─────────────────────────
+
+var TIPOS_ = ['casa', 'personal', 'ingreso'];
+var FRECUENCIAS_ = ['mensual', 'bimestral', 'semanal', 'semanal_mes', 'unica'];
+
+function slug_(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 24) || 'pago';
+}
+
+/** Crea o actualiza una fila de Hub_Pagos. Sin id → fila nueva. */
+function guardarPago_(p) {
+  var concepto = String(p.concepto || '').trim().slice(0, 60);
+  if (!concepto) throw new Error('Falta el concepto');
+  var monto = round2_(parseFloat(p.monto));
+  if (!(monto > 0)) throw new Error('Monto inválido');
+  var tipo = String(p.tipo || '').toLowerCase();
+  if (TIPOS_.indexOf(tipo) < 0) throw new Error('Tipo inválido');
+  var frec = String(p.frecuencia || '').toLowerCase();
+  if (FRECUENCIAS_.indexOf(frec) < 0) throw new Error('Frecuencia inválida');
+  var iso = /^\d{4}-\d{2}-\d{2}$/;
+  var inicio = String(p.inicio || '').trim() || hoyIso_();
+  var fin = String(p.fin || '').trim();
+  if (!iso.test(inicio) || (fin && !iso.test(fin))) throw new Error('Fecha inválida');
+  var dias = String(p.dias || '').toUpperCase().replace(/\s+/g, '');
+  if (frec === 'mensual' || frec === 'bimestral') {
+    if (!/^([1-9]|[12]\d|3[01])(,([1-9]|[12]\d|3[01]))*$/.test(dias)) throw new Error('Días del mes inválidos (ej. 12 o 15,30)');
+  } else if (frec === 'semanal' || frec === 'semanal_mes') {
+    if (!/^(LU|MA|MI|JU|VI|SA|DO)$/.test(dias)) throw new Error('Día de la semana inválido');
+  } else {
+    dias = '';
+    fin = inicio;
+  }
+  if (fin && fin < inicio) throw new Error('La fecha de fin es antes del inicio');
+  var activo = p.activo === undefined ? true : !!p.activo;
+  var nota = String(p.nota || '').slice(0, 120);
+
+  var sh = SpreadsheetApp.getActive().getSheetByName(HOJA_PAGOS);
+  var ids = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 1).getValues().map(function (r) { return String(r[0]).trim(); });
+  var id = String(p.id || '').trim();
+  var fila;
+  if (id) {
+    fila = ids.indexOf(id) + 1;
+    if (fila < 2) throw new Error('No existe el pago ' + id);
+  } else {
+    var base = slug_(concepto), n = 1;
+    id = base;
+    while (ids.indexOf(id) >= 0) id = base + '_' + (++n);
+    fila = sh.getLastRow() + 1;
+  }
+  sh.getRange('E2:E500').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(FRECUENCIAS_).setAllowInvalid(true).build());
+  var r = sh.getRange(fila, 1, 1, 10);
+  r.setNumberFormats([['@', '@', '$#,##0.00', '@', '@', '@', '@', '@', 'General', '@']]);
+  r.setValues([[id, concepto, monto, tipo, frec, dias, inicio, fin, activo, nota]]);
+  sh.getRange(fila, 9).insertCheckboxes().setValue(activo);
+}
+
+function borrarPago_(id) {
+  var sh = SpreadsheetApp.getActive().getSheetByName(HOJA_PAGOS);
+  var ids = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 1).getValues().map(function (r) { return String(r[0]).trim(); });
+  var fila = ids.indexOf(String(id || '').trim()) + 1;
+  if (fila < 2) throw new Error('No existe el pago');
+  sh.deleteRow(fila);
+}
+
+function fmtMx_(n) {
+  var s = Math.abs(n).toFixed(2).replace(/\.00$/, '');
+  var partes = s.split('.');
+  partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (n < 0 ? '-$' : '$') + partes.join('.');
+}
+
 function ajustarSaldo_(monto) {
   var m = round2_(parseFloat(monto));
   if (isNaN(m)) throw new Error('Saldo inválido');
@@ -273,7 +364,8 @@ function leerPagos_() {
       dias: String(r[5]).trim(),
       inicio: aIso_(r[6]),
       fin: aIso_(r[7]),
-      activo: r[8] === true || String(r[8]).toUpperCase() === 'TRUE'
+      activo: r[8] === true || String(r[8]).toUpperCase() === 'TRUE',
+      nota: String(r[9] || '')
     };
   });
 }

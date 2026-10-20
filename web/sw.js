@@ -1,6 +1,6 @@
 // Cache del "cascarón" de la app para que abra sin red. Los datos (Apps Script) nunca se cachean aquí;
 // la app guarda la última respuesta en localStorage.
-const CACHE = 'pagos-v3';
+const CACHE = 'pagos-v4';
 const SHELL = ['./', 'index.html', 'manifest.json', 'bg.jpg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {

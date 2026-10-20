@@ -233,7 +233,7 @@
 
 <nav class="tabbar" id="tabbar">
   <button class="tab on" data-tab="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg>Inicio</button>
-  <button class="tab" data-tab="semanas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>Semanas</button>
+  <button class="tab" data-tab="semanas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>Pagos</button>
   <button class="plus" id="fab" aria-label="Agregar gasto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
   <button class="tab" data-tab="grafica"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h18"/><path d="m4 15 5-5 4 3 7-7"/></svg>Proyección</button>
   <button class="tab" data-tab="movs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>Movimientos</button>
@@ -272,11 +272,12 @@ const cfg = {
   get token() { return store.get('hub.token') || ''; }
 };
 
-const TITULOS = { inicio: 'Inicio', semanas: 'Semanas', grafica: 'Proyección', movs: 'Movimientos' };
+const TITULOS = { inicio: 'Inicio', semanas: 'Pagos', grafica: 'Proyección', movs: 'Movimientos' };
 let vista = null;
 let ocupado = false;
 let tab = store.get('hub.tab') || 'inicio';
 let semanaSel = null;
+let subPagos = store.get('hub.sub') || 'semanas';
 let rango = 30;
 let actualizado = null;
 
@@ -417,7 +418,7 @@ function renderInicio() {
   if (v.porConfirmar.length) h += `<section class="glass confirm"><div class="ctitle"><h3>¿Ya llegó?</h3></div><div class="list">${v.porConfirmar.map(fila).join('')}</div></section>`;
 
   const proximos = v.semanas.flatMap((w) => w.items).slice(0, 5);
-  h += `<section class="glass"><div class="ctitle"><h3>Próximos</h3><button class="act" data-go="semanas">Ver semanas</button></div>
+  h += `<section class="glass"><div class="ctitle"><h3>Próximos</h3><button class="act" data-go="semanas">Ver todos</button></div>
     <div class="list">${proximos.length ? proximos.map(fila).join('') : '<div class="empty">Nada pendiente</div>'}</div></section>`;
 
   h += `<section class="glass"><button class="mini" data-go="grafica">
@@ -440,15 +441,23 @@ function sparkline(pts) {
 }
 
 function renderSemanas() {
+  $('#v-semanas').innerHTML = `<div class="seg" id="subseg" style="margin-bottom:12px">
+      <button data-sub="semanas" class="${subPagos === 'semanas' ? 'on' : ''}">Por semana</button>
+      <button data-sub="recs" class="${subPagos === 'recs' ? 'on' : ''}">Recordatorios</button></div><div id="pbody"></div>`;
+  $$('[data-sub]').forEach((b) => b.onclick = () => { subPagos = b.dataset.sub; store.set('hub.sub', subPagos); renderSemanas(); });
+  if (subPagos === 'recs') renderRecordatorios(); else renderPorSemana();
+}
+
+function renderPorSemana() {
   const v = vista;
-  if (!v.semanas.length) { $('#v-semanas').innerHTML = '<div class="empty">No hay pagos pendientes.</div>'; return; }
+  if (!v.semanas.length) { $('#pbody').innerHTML = '<div class="empty">No hay pagos pendientes.</div>'; return; }
   if (!v.semanas.some((w) => w.inicio === semanaSel)) semanaSel = v.semanas[0].inicio;
   const idx = v.semanas.findIndex((w) => w.inicio === semanaSel);
   const w = v.semanas[idx];
   const actual = v.hoy >= w.inicio && v.hoy <= w.fin;
   const casa = w.items.filter((o) => o.tipo === 'casa').reduce((a, o) => a + o.monto, 0);
   const pers = w.items.filter((o) => o.tipo === 'personal').reduce((a, o) => a + o.monto, 0);
-  $('#v-semanas').innerHTML = `
+  $('#pbody').innerHTML = `
     <div class="weeks" id="weeks">${v.semanas.map((x) => `<button class="wchip ${x.inicio === semanaSel ? 'on' : ''}" data-w="${x.inicio}">
       <div class="a">${v.hoy >= x.inicio && v.hoy <= x.fin ? 'Esta semana' : 'vie ' + fmtCorto(x.inicio)}</div><div class="b num">${short(x.apartar)}</div></button>`).join('')}</div>
     <section class="glass hero" id="wcard">
@@ -467,17 +476,100 @@ function renderSemanas() {
       </div>
       <div class="list">${w.items.map(fila).join('')}</div>
     </section>`;
-  const mover = (d) => { const n = v.semanas[idx + d]; if (n) { semanaSel = n.inicio; renderSemanas(); } };
+  const mover = (d) => { const n = v.semanas[idx + d]; if (n) { semanaSel = n.inicio; renderPorSemana(); } };
   $('#wprev').onclick = () => mover(-1);
   $('#wnext').onclick = () => mover(1);
-  $$('[data-w]').forEach((b) => b.onclick = () => { semanaSel = b.dataset.w; renderSemanas(); });
+  $$('[data-w]').forEach((b) => b.onclick = () => { semanaSel = b.dataset.w; renderPorSemana(); });
   const on = $('#weeks .wchip.on');
   if (on) { const c = $('#weeks'); c.scrollLeft = on.offsetLeft - (c.clientWidth - on.clientWidth) / 2; }
   let x0 = null;
   const card = $('#wcard');
   card.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
   card.addEventListener('touchend', (e) => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) mover(dx < 0 ? 1 : -1); });
-  enlazar($('#v-semanas'));
+  enlazar($('#pbody'));
+}
+
+// ─── Recordatorios (catálogo Hub_Pagos) ──────────────────────
+const NOMBRE_DIA = { LU: 'lunes', MA: 'martes', MI: 'miércoles', JU: 'jueves', VI: 'viernes', SA: 'sábado', DO: 'domingo' };
+function describir(p) {
+  const f = p.frecuencia, d = String(p.dias || '');
+  let t = f === 'mensual' ? `Cada mes el ${d.replace(',', ' y ')}`
+    : f === 'bimestral' ? `Cada 2 meses el ${d}`
+    : f === 'semanal' ? `Cada ${NOMBRE_DIA[d] || d}`
+    : f === 'semanal_mes' ? `Mensual, repartido cada ${NOMBRE_DIA[d] || d}`
+    : f === 'unica' ? `Una vez · ${p.inicio ? fmt(p.inicio) : ''}` : f;
+  if (p.fin && f !== 'unica') t += ` · hasta ${fmtCorto(p.fin)} ${p.fin.slice(2, 4)}`;
+  return t;
+}
+
+function renderRecordatorios() {
+  const lista = (vista.pagos || []).slice();
+  if (!vista.pagos) { $('#pbody').innerHTML = '<div class="empty">Actualizando… vuelve a abrir en un momento.</div>'; return; }
+  lista.sort((a, b) => (b.activo - a.activo) || ((a.siguiente || '9999') < (b.siguiente || '9999') ? -1 : 1));
+  const grupo = (titulo, arr) => arr.length ? `<section class="glass"><div class="ctitle"><h3>${titulo}</h3><span class="label">${arr.length}</span></div><div class="list">${arr.map((p) => `
+    <button class="row" data-pago="${esc(p.id)}" style="${p.activo ? '' : 'opacity:.45'}">
+      <span class="ic ${esc(p.tipo)}">${inicial(p.concepto)}</span>
+      <span class="mid"><span class="c">${esc(p.concepto)}</span><span class="f">${esc(describir(p))}</span></span>
+      <span class="m num ${p.tipo === 'ingreso' ? 'in' : ''}">${p.tipo === 'ingreso' ? '+' : ''}${money(p.monto)}<span class="w ${p.siguiente && diff(vista.hoy, p.siguiente) <= 2 ? 'soon' : ''}">${!p.activo ? 'Pausado' : p.siguiente ? fmtCorto(p.siguiente) : 'Sin fecha próxima'}</span></span>
+    </button>`).join('')}</div></section>` : '';
+  const act = lista.filter((p) => p.activo);
+  $('#pbody').innerHTML = `
+    <button class="btn ghost" id="nuevoPago" style="margin:0 0 12px">+ Nuevo recordatorio</button>
+    ${grupo('Casa', act.filter((p) => p.tipo === 'casa'))}
+    ${grupo('Personal', act.filter((p) => p.tipo === 'personal'))}
+    ${grupo('Ingresos', act.filter((p) => p.tipo === 'ingreso'))}
+    ${grupo('Pausados', lista.filter((p) => !p.activo))}`;
+  $('#nuevoPago').onclick = () => hojaPago(null);
+  $$('[data-pago]').forEach((b) => b.onclick = () => hojaPago(b.dataset.pago));
+}
+
+function hojaPago(id) {
+  const p = id ? (vista.pagos || []).find((x) => x.id === id) : { concepto: '', monto: '', tipo: 'personal', frecuencia: 'mensual', dias: '', inicio: hoyLocal(), fin: '', activo: true };
+  if (!p) return;
+  let tipo = p.tipo, frec = p.frecuencia;
+  const diaSem = /^(LU|MA|MI|JU|VI|SA|DO)$/.test(p.dias) ? p.dias : 'VI';
+  abrirHoja(`
+    <h3>${id ? 'Editar recordatorio' : 'Nuevo recordatorio'}</h3>
+    <div class="f">${id ? 'Los cambios se aplican desde ya a la proyección.' : 'Se suma a tus pagos y a la proyección.'}</div>
+    <label class="field"><input id="pc" class="txt" placeholder="Concepto (ej. Renta)" maxlength="60" value="${esc(p.concepto)}"></label>
+    <label class="field"><span>$</span><input id="pm" inputmode="decimal" placeholder="0" value="${p.monto}"></label>
+    <div class="seg" id="ptipo" style="margin-bottom:12px">${['casa', 'personal', 'ingreso'].map((t) => `<button data-t="${t}" class="${t === tipo ? 'on' : ''}">${{ casa: 'Casa', personal: 'Personal', ingreso: 'Ingreso' }[t]}</button>`).join('')}</div>
+    <div class="chips" id="pfrec">${[['mensual', 'Mensual'], ['bimestral', 'Cada 2 meses'], ['semanal', 'Semanal'], ['unica', 'Una vez'], ['semanal_mes', 'Mensual repartido']].map(([k, n]) => `<button class="chip ${k === frec ? 'on' : ''}" data-f="${k}">${n}</button>`).join('')}</div>
+    <div id="pdias"></div>
+    <div id="pfechas"></div>
+    ${id ? `<label class="row" style="border:0;padding:4px 0 8px"><span class="mid"><span class="c">Activo</span><span class="f">Si lo pausas deja de contar en la proyección</span></span><input type="checkbox" id="pa" ${p.activo ? 'checked' : ''} style="width:22px;height:22px;accent-color:#ffd600"></label>` : ''}
+    <button class="btn primary" id="ok">Guardar</button>
+    ${id ? '<button class="btn ghost" id="del" style="color:var(--rose)">Eliminar</button>' : ''}
+    <button class="btn plain" id="cancel">Cancelar</button>`);
+  const pintar = () => {
+    const mes = frec === 'mensual' || frec === 'bimestral', sem = frec === 'semanal' || frec === 'semanal_mes';
+    $('#pdias').innerHTML = mes ? `<div class="label" style="margin:0 0 6px 4px">Día del mes</div><label class="field"><input id="pd" class="txt" inputmode="numeric" placeholder="Día del mes (ej. 12 o 15,30)" value="${esc(/^[\d,]+$/.test(p.dias) ? p.dias : '')}"></label>`
+      : sem ? `<div class="label" style="margin:0 0 6px 4px">Día de la semana</div><div class="chips">${Object.keys(NOMBRE_DIA).map((k) => `<button class="chip ${k === diaSem ? 'on' : ''}" data-d="${k}">${NOMBRE_DIA[k].slice(0, 3)}</button>`).join('')}</div>` : '';
+    $('#pfechas').innerHTML = frec === 'unica'
+      ? `<div class="label" style="margin:0 0 6px 4px">Fecha</div><label class="field"><input id="pi" class="txt" type="date" value="${p.inicio || hoyLocal()}"></label>`
+      : `<div class="label" style="margin:0 0 6px 4px">${frec === 'bimestral' ? 'Desde (un mes en que sí toca)' : 'Desde'}</div><label class="field"><input id="pi" class="txt" type="date" value="${p.inicio || hoyLocal()}"></label>
+         <div class="label" style="margin:0 0 6px 4px">Hasta (opcional)</div><label class="field"><input id="pf" class="txt" type="date" value="${p.fin || ''}"></label>`;
+    $$('[data-d]').forEach((b) => b.onclick = () => { $$('[data-d]').forEach((x) => x.classList.toggle('on', x === b)); });
+  };
+  pintar();
+  $$('[data-t]').forEach((b) => b.onclick = () => { tipo = b.dataset.t; $$('[data-t]').forEach((x) => x.classList.toggle('on', x === b)); });
+  $$('[data-f]').forEach((b) => b.onclick = () => { frec = b.dataset.f; $$('[data-f]').forEach((x) => x.classList.toggle('on', x === b)); pintar(); });
+  $('#ok').onclick = () => {
+    const sel = $('[data-d].on');
+    const dias = $('#pd') ? $('#pd').value.replace(/\s/g, '') : sel ? sel.dataset.d : '';
+    const pago = {
+      id: id || undefined, concepto: $('#pc').value.trim(), monto: parseFloat(String($('#pm').value).replace(/[^0-9.]/g, '')),
+      tipo, frecuencia: frec, dias, inicio: $('#pi').value, fin: $('#pf') ? $('#pf').value : '', activo: $('#pa') ? $('#pa').checked : true, nota: p.nota || ''
+    };
+    if (!pago.concepto) return $('#pc').focus();
+    if (!(pago.monto > 0)) return $('#pm').focus();
+    accion({ action: 'guardar_pago', pago }, id ? 'Recordatorio actualizado' : 'Recordatorio agregado');
+  };
+  if (id) $('#del').onclick = () => {
+    if ($('#del').dataset.sure) return accion({ action: 'borrar_pago', id }, 'Recordatorio eliminado');
+    $('#del').dataset.sure = '1'; $('#del').textContent = 'Toca otra vez para eliminar';
+  };
+  $('#cancel').onclick = cerrarHoja;
 }
 
 function renderMovs() {

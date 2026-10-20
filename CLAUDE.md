@@ -12,6 +12,8 @@ PWA personal (GitHub Pages) + backend Apps Script ligado al Sheet de finanzas de
 Convenciones:
 - Dos tipos de semana: las tarjetas de "Apartar" van de viernes a jueves (día de pago); el resumen del hero ("Esta semana") va de lunes a domingo.
 - Gastos/ingresos extra (`gasto`, `ingreso_extra`) mueven el saldo al registrarse y se guardan en Hub_Registro con ID `<accion>_<uuid8>`; `deshacer` los revierte.
+- Frecuencias de Hub_Pagos: mensual, bimestral, semanal, semanal_mes, unica. El catálogo se edita desde la app (guardar_pago / borrar_pago).
+- `corto: true` en un POST regresa solo {saldo, porPagar, alCierre, mensaje}; lo usa el atajo del Action Button.
 - Fechas siempre como texto `YYYY-MM-DD`; zona America/Mexico_City.
 - ID de ocurrencia = `<idPago>_<YYYY-MM-DD>`; el registro se indexa por ese ID.
 - Gastos de casa se pagan al 100%; el 25% de Tania entra como ingreso quincenal.
