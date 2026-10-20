@@ -29,7 +29,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Validar sintaxis y lógica
         run: |
@@ -60,12 +60,12 @@ jobs:
         env:
           HUB_TOKEN: ${{ secrets.HUB_TOKEN }}
         run: |
-          if [ -z "$HUB_TOKEN" ]; then echo "Sin HUB_TOKEN, me salto la prueba"; exit 0; fi
+          if [ -z "$HUB_TOKEN" ]; then echo "::warning::Sin HUB_TOKEN, me salto la prueba"; exit 0; fi
           URL="https://script.google.com/macros/s/$DEPLOYMENT_ID/exec"
           for i in 1 2 3; do
             R=$(curl -sL "$URL?action=data&token=$HUB_TOKEN")
             if echo "$R" | grep -q '"ok":true'; then
-              echo "$R" | grep -q '"semanaActual"' && echo "OK: backend responde con semanaActual" || echo "OK: backend responde"
+              echo "$R" | grep -q '"semanaActual"' && echo "::notice::OK: backend v2 responde (semanaActual)" || echo "::warning::Backend responde pero sin semanaActual"
               exit 0
             fi
             sleep 10
