@@ -122,6 +122,13 @@
   .libre .s { color: var(--text-2); font-size: 12.5px; margin-top: 4px; }
   .libre.bad { border-color: rgba(var(--bad-rgb),.5); background: linear-gradient(135deg, rgba(var(--bad-rgb),.18), rgba(var(--bad-rgb),.05)); }
   .libre.bad .k, .libre.bad .v { color: var(--bad); }
+  .libre .de { font: 600 14px var(--font); color: var(--muted); letter-spacing: 0; }
+  .libre .bar { height: 6px; border-radius: 4px; background: rgba(var(--fg),.1); margin: 10px 0 8px; overflow: hidden; }
+  .libre .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--acc2), var(--acc)); }
+  .libre.bad .bar i { background: var(--bad); }
+  .libre .meta { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(var(--fg),.1); font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+  .libre .meta.ok { color: var(--ok); }
+  .libre .meta.no { color: var(--warn); }
   .explica p { color: var(--text-2); font-size: 14px; margin: 0 0 10px; }
   .explica b { color: var(--text); }
 
@@ -421,8 +428,23 @@ function renderInicio() {
     <div class="label">En tu banco</div>
     <button class="saldo num" id="saldoBtn">${saldoHtml(v.saldo)}</button>
     <div class="hint">Toca para igualarlo con tu banco</div>`;
-  const l = v.libre;
-  if (l) {
+  const l = v.libre, pr = v.presupuesto, mt = v.meta;
+  if (pr) {
+    const pct = pr.semanal ? Math.min(100, (pr.gastado / pr.semanal) * 100) : 100;
+    const maxMeta = mt ? Math.min(mt.maxSemanal, l ? l.porSemana : Infinity) : 0;
+    const lineaMeta = mt
+      ? (mt.alcanza
+        ? `<div class="meta ok">✓ Meta ${short(mt.monto)} al ${fmtCorto(mt.fecha)} · llegas a ${short(mt.proyectado)}</div>`
+        : `<div class="meta no">Meta ${short(mt.monto)} al ${fmtCorto(mt.fecha)} · te faltarían ${short(-mt.diferencia)}. Para lograrla: máx ${money(maxMeta)}/sem</div>`)
+      : `<div class="meta">Toca para ponerte una meta de ahorro</div>`;
+    h += `<button class="libre ${pr.excedido ? 'bad' : ''}" id="libreBtn">
+        <div class="k">${pr.excedido ? 'Te pasaste esta semana' : 'Te quedan esta semana'}</div>
+        <div class="v num">${pr.excedido ? '−' + money(pr.excedido) : money(pr.queda)}<span class="de"> de ${money(pr.semanal)}</span></div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        <div class="s">Llevas ${money(pr.gastado)} en gastos del día a día (lun–dom)</div>
+        ${lineaMeta}
+      </button>`;
+  } else if (l) {
     h += l.faltante
       ? `<button class="libre bad" id="libreBtn"><div class="k">Vas corto</div><div class="v num">−${money(l.faltante)}</div>
            <div class="s">El ${fmt(l.faltanteFecha)} quedarías abajo de tu colchón. Mejor no gastar extra por ahora.</div></button>`
@@ -670,12 +692,17 @@ function dibujar(pts, sel) {
   const box = $('#chart');
   const W = Math.max(280, box.clientWidth), H = 210, padL = 4, padR = 4, padT = 14, padB = 22;
   const ys = pts.map((p) => p.saldo), col = vista.colchon || 0;
-  let lo = Math.min(0, ...ys), hi = Math.max(...ys, col);
+  const metaEnRango = vista.meta && pts.some((p) => p.fecha === vista.meta.fecha) ? vista.meta.monto : 0;
+  let lo = Math.min(0, ...ys), hi = Math.max(...ys, col, metaEnRango);
   const span = hi - lo || 1; hi += span * .08;
   const x = (i) => padL + (i * (W - padL - padR)) / (pts.length - 1);
   const y = (v) => padT + ((hi - v) * (H - padT - padB)) / (hi - lo);
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.saldo).toFixed(1)}`).join('');
   const ev = eventosPorDia();
+  const mt = vista.meta, mi = mt ? pts.findIndex((p) => p.fecha === mt.fecha) : -1;
+  const metaMarca = mi >= 0 ? `<line x1="${x(mi)}" x2="${x(mi)}" y1="${y(mt.monto)}" y2="${H - padB}" style="stroke:var(--ok)" stroke-opacity=".5" stroke-dasharray="2 4"/>
+    <circle cx="${x(mi)}" cy="${y(mt.monto)}" r="4.5" style="fill:var(--bg);stroke:var(--ok)" stroke-width="2"/>
+    <text x="${Math.min(x(mi), W - 24)}" y="${y(mt.monto) - 9}" style="fill:var(--ok)" font-size="10.5" text-anchor="middle" font-family="Plus Jakarta Sans, system-ui">meta</text>` : '';
   const dots = pts.map((p, i) => (ev[p.fecha] || []).some((o) => o.tipo !== 'ingreso') ? `<circle cx="${x(i).toFixed(1)}" cy="${y(p.saldo).toFixed(1)}" r="2.6" style="fill:var(--acc2)"/>` : '').join('');
   const meses = pts.map((p, i) => p.fecha.endsWith('-01') ? i : -1).filter((i) => i > 0 && x(i) - x(0) > 52);
   const lejos = (i) => i > 3 && i < pts.length - 4 && meses.every((m) => Math.abs(m - i) > 3);
@@ -691,6 +718,7 @@ function dibujar(pts, sel) {
     <path d="${line}L${x(pts.length - 1)},${H - padB}L${x(0)},${H - padB}Z" fill="url(#ga)"/>
     <path d="${line}" fill="none" style="stroke:var(--acc)" stroke-width="2.4" stroke-linejoin="round" filter="url(#glow)"/>
     ${dots}
+    ${metaMarca}
     ${ticks}
     <line id="cx" y1="${padT - 6}" y2="${H - padB}" style="stroke:var(--muted)" stroke-width="1"/>
     <circle id="cc" r="6" style="fill:var(--bg);stroke:var(--acc-hi)" stroke-width="2.5"/>
@@ -755,7 +783,40 @@ function hojaItem(id) {
   $('#cancel').onclick = cerrarHoja;
 }
 
+function hojaPlan() {
+  const pr = vista.presupuesto, mt = vista.meta, l = vista.libre;
+  const cfgMeta = mt || {};
+  abrirHoja(`<div class="explica">
+    <h3>Tu plan</h3>
+    <div class="f">Lo que te pongas aquí ya se descuenta en la proyección y en "Al domingo".</div>
+    <div class="label" style="margin:0 0 6px 4px">Gasto del día a día por semana</div>
+    <label class="field"><span>$</span><input id="ppres" inputmode="decimal" value="${pr.semanal}"></label>
+    <div class="label" style="margin:0 0 6px 4px">Meta de ahorro</div>
+    <label class="field"><span>$</span><input id="pmeta" inputmode="decimal" placeholder="Ej. 100000" value="${cfgMeta.monto || ''}"></label>
+    <div class="label" style="margin:0 0 6px 4px">Para el</div>
+    <label class="field"><input id="pfecha" class="txt" type="date" value="${cfgMeta.fecha || ''}"></label>
+    ${mt ? `<p>Con ${money(pr.semanal)} por semana llegas al <b>${fmt(mt.fecha)}</b> con <b>${money(mt.proyectado)}</b>${mt.alcanza ? ' ✓' : `; te faltarían <b>${money(-mt.diferencia)}</b>`}.</p>
+            <p>Para lograr la meta podrías gastar como máximo <b>${money(Math.min(mt.maxSemanal, l ? l.porSemana : Infinity))} por semana</b>.</p>` : ''}
+    ${l ? `<p>Lo máximo que aguanta tu flujo sin bajar del colchón de ${money(vista.colchon)} es <b>${money(l.porSemana)} por semana</b> (el día más apretado es el ${fmt(l.cuello)}).</p>` : ''}
+    ${vista.proyeccionBase ? `<p>Sin ningún gasto del día a día terminarías el horizonte con ${money(vista.proyeccionBase.final)}.</p>` : ''}
+    </div>
+    <button class="btn primary" id="ok">Guardar</button>
+    ${mt ? '<button class="btn ghost" id="quitar">Quitar meta</button>' : ''}
+    <button class="btn plain" id="cancel">Cerrar</button>`);
+  const num = (sel) => String($(sel).value).replace(/[^0-9.]/g, '');
+  $('#ok').onclick = () => {
+    const pres = parseFloat(num('#ppres'));
+    if (!(pres >= 0)) return $('#ppres').focus();
+    const meta = num('#pmeta'), fecha = $('#pfecha').value;
+    if ((meta && !fecha) || (!meta && fecha)) { (meta ? $('#pfecha') : $('#pmeta')).focus(); return toast('Pon monto y fecha de la meta'); }
+    accion({ action: 'config', presupuesto: pres, meta_monto: meta, meta_fecha: fecha }, 'Plan actualizado');
+  };
+  if (mt) $('#quitar').onclick = () => accion({ action: 'config', meta_monto: '', meta_fecha: '' }, 'Meta quitada');
+  $('#cancel').onclick = cerrarHoja;
+}
+
 function hojaLibre() {
+  if (vista.presupuesto) return hojaPlan();
   const l = vista.libre;
   if (!l) return;
   abrirHoja(`<div class="explica">

@@ -139,11 +139,13 @@ function resumenCorto_(vista) {
     porPagar: s.porPagar,
     porEntrar: s.porEntrar,
     alCierre: s.alCierre,
-    libreSemana: l.semana || 0,
+    libreSemana: vista.presupuesto ? vista.presupuesto.queda : (l.semana || 0),
+    presupuesto: vista.presupuesto ? vista.presupuesto.semanal : 0,
     librePorSemana: l.porSemana || 0,
     colchon: vista.colchon,
     proximos: prox,
-    mensaje: 'Saldo ' + fmtMx_(vista.saldo) + ' · libre esta semana ' + fmtMx_(l.semana || 0)
+    meta: vista.meta ? { monto: vista.meta.monto, fecha: vista.meta.fecha, proyectado: vista.meta.proyectado, alcanza: vista.meta.alcanza } : null,
+    mensaje: 'Saldo ' + fmtMx_(vista.saldo) + ' · te quedan ' + fmtMx_(vista.presupuesto ? vista.presupuesto.queda : (l.semana || 0)) + ' esta semana'
   };
 }
 
@@ -164,6 +166,7 @@ function doPost(e) {
         case 'ingreso_extra': movimientoExtra_('ingreso_extra', body.concepto, body.monto, body.fecha); break;
         case 'guardar_pago': guardarPago_(body.pago || {}); break;
         case 'borrar_pago': borrarPago_(body.id); break;
+        case 'config': guardarPlan_(body); break;
         default: throw new Error('Acción no válida');
       }
     } finally {
@@ -196,6 +199,7 @@ function obtenerVista_() {
   var hoy = hoyIso_();
   var horizonte = Math.max(parseInt(cfg.horizonte_dias, 10) || 0, 120); // la gráfica llega a 120 días
   var hasta = addDays_(hoy, horizonte);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cfg.meta_fecha || '') && cfg.meta_fecha > hasta && cfg.meta_fecha <= addDays_(hoy, 400)) hasta = cfg.meta_fecha;
   var desde = cfg.inicio_hub > addDays_(hoy, -45) ? cfg.inicio_hub : addDays_(hoy, -45);
 
   var registro = leerRegistro_();
@@ -203,11 +207,29 @@ function obtenerVista_() {
     .filter(function (o) { return !registro.porId[o.id]; });
 
   var saldo = parseFloat(cfg.saldo) || 0;
-  var vista = armarVista_(pendientes, saldo, hoy, hasta);
-  vista.semanaActual = resumenSemana_(pendientes, registro.filas, saldo, hoy);
+  var colchon = parseFloat(cfg.colchon) || 0;
+  var semana = resumenSemana_(pendientes, registro.filas, saldo, hoy);
+  var presupuesto = cfg.presupuesto_semanal === undefined || cfg.presupuesto_semanal === '' ? 2000 : (parseFloat(cfg.presupuesto_semanal) || 0);
+  var variable = { semanal: presupuesto, gastadoSemana: semana.gastosExtra };
+
+  var vista = armarVista_(pendientes, saldo, hoy, hasta, variable);           // proyección realista (con gasto del día a día)
+  var base = armarVista_(pendientes, saldo, hoy, hasta, null).proyeccion;      // sin gasto del día a día
+  var quedaSemana = round2_(Math.max(0, presupuesto - semana.gastosExtra));
+  semana.alCierreSinPresupuesto = semana.alCierre;
+  semana.alCierre = round2_(semana.alCierre - quedaSemana);
+  vista.semanaActual = semana;
   vista.saldoFecha = cfg.saldo_fecha;
-  vista.colchon = parseFloat(cfg.colchon) || 0;
-  vista.libre = libreParaGastar_(vista.proyeccion.puntos, vista.colchon, hoy);
+  vista.colchon = colchon;
+  vista.libre = libreParaGastar_(base.puntos, colchon, hoy);                   // máximo sostenible sin romper el colchón
+  vista.presupuesto = {
+    semanal: presupuesto,
+    gastado: semana.gastosExtra,
+    queda: quedaSemana,
+    excedido: round2_(Math.max(0, semana.gastosExtra - presupuesto))
+  };
+  vista.proyeccionBase = { final: base.final, minimo: base.minimo, minimoFecha: base.minimoFecha };
+  vista.meta = evaluarMeta_({ monto: parseFloat(cfg.meta_monto) || 0, fecha: cfg.meta_fecha || '' },
+    vista.proyeccion.puntos, base.puntos, hoy, semana.gastosExtra);
   var pagos = leerPagos_();
   vista.pagos = pagos.map(function (p) {
     var sig = pendientes.filter(function (o) { return o.pagoId === p.id && o.fecha >= hoy; })[0];
@@ -337,6 +359,26 @@ function borrarPago_(id) {
   var fila = ids.indexOf(String(id || '').trim()) + 1;
   if (fila < 2) throw new Error('No existe el pago');
   sh.deleteRow(fila);
+}
+
+/** Presupuesto semanal del día a día y meta de ahorro (Hub_Config). */
+function guardarPlan_(b) {
+  if (b.presupuesto !== undefined) {
+    var p = round2_(parseFloat(b.presupuesto));
+    if (!(p >= 0)) throw new Error('Presupuesto inválido');
+    escribirConfig_('presupuesto_semanal', String(p));
+  }
+  if (b.meta_monto !== undefined) {
+    var m = String(b.meta_monto).trim() === '' ? '' : round2_(parseFloat(b.meta_monto));
+    if (m !== '' && !(m > 0)) throw new Error('Meta inválida');
+    escribirConfig_('meta_monto', String(m));
+  }
+  if (b.meta_fecha !== undefined) {
+    var f = String(b.meta_fecha || '').trim();
+    if (f && !/^\d{4}-\d{2}-\d{2}$/.test(f)) throw new Error('Fecha inválida');
+    if (f && f <= hoyIso_()) throw new Error('La fecha de la meta tiene que ser futura');
+    escribirConfig_('meta_fecha', f);
+  }
 }
 
 function fmtMx_(n) {

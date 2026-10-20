@@ -171,7 +171,23 @@ function libreParaGastar_(puntos, colchon, hoy) {
  * Proyección conservadora: en un mismo día primero salen los pagos y después entran los ingresos.
  * Lo vencido se cuenta como si saliera hoy; los ingresos pasados sin confirmar no se suman.
  */
-function armarVista_(pendientes, saldo, hoy, hasta) {
+/**
+ * Gasto del día a día que se descuenta en la proyección.
+ * Semana de lunes a domingo: en la semana actual se reparte lo que queda del presupuesto
+ * (presupuesto − gastos extra ya registrados) entre los días que faltan; en las demás, presupuesto / 7 por día.
+ */
+function gastoVariableDia_(d, hoy, variable) {
+  if (!variable || !(variable.semanal > 0)) return 0;
+  var lunesHoy = addDays_(hoy, -((dow_(hoy) + 6) % 7));
+  if (d <= addDays_(lunesHoy, 6)) {
+    var resta = Math.max(0, variable.semanal - (variable.gastadoSemana || 0));
+    var dias = 7 - ((dow_(hoy) + 6) % 7);
+    return resta / dias;
+  }
+  return variable.semanal / 7;
+}
+
+function armarVista_(pendientes, saldo, hoy, hasta, variable) {
   var esIngreso = function (o) { return o.tipo === 'ingreso'; };
 
   var vencidos = pendientes.filter(function (o) { return o.fecha < hoy && !esIngreso(o); });
@@ -204,6 +220,11 @@ function armarVista_(pendientes, saldo, hoy, hasta) {
       s = round2_(s - o.monto);
       if (s < minimo) { minimo = s; minimoFecha = d; }
     });
+    var gv = gastoVariableDia_(d, hoy, variable);
+    if (gv) {
+      s = round2_(s - gv);
+      if (s < minimo) { minimo = s; minimoFecha = d; }
+    }
     evs.filter(esIngreso).forEach(function (o) { s = round2_(s + o.monto); });
     puntos.push({ fecha: d, saldo: s });
   }
@@ -214,6 +235,34 @@ function armarVista_(pendientes, saldo, hoy, hasta) {
     vencidos: vencidos,
     porConfirmar: porConfirmar,
     semanas: semanas,
-    proyeccion: { minimo: minimo, minimoFecha: minimoFecha, final: s, puntos: puntos }
+    proyeccion: { minimo: minimo, minimoFecha: minimoFecha, final: s, puntos: puntos, conPresupuesto: !!(variable && variable.semanal > 0) }
+  };
+}
+
+/**
+ * Meta de ahorro: a cuánto llegas en la fecha (con el presupuesto) y cuánto podrías gastar por semana como máximo
+ * para lograrla (usando la proyección sin gasto del día a día como base).
+ */
+function evaluarMeta_(meta, puntosConPresupuesto, puntosBase, hoy, gastadoSemana) {
+  if (!meta || !(meta.monto > 0) || !meta.fecha || meta.fecha <= hoy) return null;
+  var en = function (pts) {
+    var v = null;
+    pts.forEach(function (p) { if (p.fecha <= meta.fecha) v = p.saldo; });
+    return v;
+  };
+  var proyectado = en(puntosConPresupuesto), base = en(puntosBase);
+  if (proyectado === null || base === null) return null;
+  var dias = diffDays_(hoy, meta.fecha) + 1;
+  // lo ya gastado esta semana cuenta contra el presupuesto, así que se suma de regreso al calcular el máximo semanal
+  var maxSemanal = Math.floor(((base - meta.monto) + (gastadoSemana || 0)) / (dias / 7) / 10) * 10;
+  return {
+    monto: meta.monto,
+    fecha: meta.fecha,
+    proyectado: round2_(proyectado),
+    diferencia: round2_(proyectado - meta.monto),
+    alcanza: proyectado >= meta.monto,
+    maxSemanal: Math.max(0, maxSemanal),
+    semanas: Math.round(dias / 7 * 10) / 10,
+    llegaFecha: meta.fecha > puntosBase[puntosBase.length - 1].fecha ? puntosBase[puntosBase.length - 1].fecha : meta.fecha
   };
 }

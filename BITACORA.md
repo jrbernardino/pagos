@@ -22,3 +22,4 @@
 - Proyección a 120 días (horizonte mínimo en Code.gs) y rangos de 3 y 4 meses en la gráfica. El 'Puedes gastar' ahora considera los 120 días.
 - Temas: Dorado (original), Claro y Bosque, con selector (ícono de paleta en el encabezado). Se quitó el morado: 'personal' ahora es azul (dorado/claro) o ámbar (bosque). Todos los colores pasan por variables CSS por tema.
 - Tema único "Bosque dorado" (fondo verde oscuro + acentos dorados). Se quitaron el selector de temas y bg.jpg.
+- Presupuesto semanal del día a día ($2,000) descontado en la proyección y en 'Al domingo'; tarjeta 'Te quedan esta semana' con barra. Meta de ahorro (monto + fecha) editable desde la tarjeta, con cuánto llegas y el máximo semanal para lograrla; marcada en la gráfica.

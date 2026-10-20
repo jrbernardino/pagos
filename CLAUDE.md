@@ -16,6 +16,8 @@ Convenciones:
 - Frecuencias de Hub_Pagos: mensual, bimestral, semanal, semanal_mes, unica. El catálogo se edita desde la app (guardar_pago / borrar_pago).
 - `corto` (POST `corto: true` o GET `?corto=1`) regresa `resumenCorto_`: saldo, porPagar, porEntrar, alCierre, libreSemana, librePorSemana, proximos, mensaje. Lo usan el atajo del Action Button y el widget.
 - "Puedes gastar" (`libreParaGastar_` en Motor.gs): ritmo diario parejo máximo que mantiene la proyección ≥ colchón en todo el horizonte; `semana` = ritmo × días hasta el domingo.
+- Presupuesto del día a día (`presupuesto_semanal` en Hub_Config, default 2000): la proyección principal lo descuenta (lun–dom; en la semana actual solo lo que queda tras los gastos extra). `proyeccionBase` / `libre` se calculan SIN él. "Al domingo" también lo descuenta.
+- Meta de ahorro (`meta_monto`, `meta_fecha` en Hub_Config) → `vista.meta` (`evaluarMeta_`): proyectado en la fecha, diferencia y máximo semanal para lograrla. Se edita con la acción `config`.
 - Fechas siempre como texto `YYYY-MM-DD`; zona America/Mexico_City.
 - ID de ocurrencia = `<idPago>_<YYYY-MM-DD>`; el registro se indexa por ese ID.
 - Gastos de casa se pagan al 100%; el 25% de Tania entra como ingreso quincenal.
