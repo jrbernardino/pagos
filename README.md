@@ -39,6 +39,8 @@ Cuando cambies `Code.gs` o `Motor.gs`: **Implementar → Gestionar implementacio
   - *Fin* vacío = sin fin. Para pausar algo, desmarca *Activo*.
 - Semanas de **viernes a jueves**. "Apartar" suma los pagos de la semana, incluida la despensa.
 - Al marcar **Pagado** se resta del saldo; al marcar **Recibido** se suma. Puedes cambiar el monto antes de confirmar (por ejemplo, si la luz llegó más cara). Cada acción tiene **Deshacer** por unos segundos.
+- **Esta semana** (lunes a domingo): lo que te falta pagar, lo que te falta que entre y con cuánto cierras el domingo. Lo vencido sin marcar cuenta como por pagar.
+- **+ Gasto**: registra gastos o ingresos que no están en Hub_Pagos (comida, gasolina, etc.). Bajan o suben el saldo al momento y se pueden deshacer tocándolos en *Últimos movimientos*.
 - **Saldo**: tócalo para igualarlo con tu banco cuando quieras.
 - **Proyección**: conservadora. En un mismo día primero salen los pagos y luego entran los ingresos. Lo vencido cuenta como si saliera hoy, y los ingresos pasados que no confirmaste no se suman.
 - Los recordatorios del iPhone son aparte: si cambias un monto aquí, no se actualizan solos.

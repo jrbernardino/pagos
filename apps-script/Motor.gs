@@ -99,6 +99,39 @@ function generarOcurrencias_(pagos, desde, hasta) {
 }
 
 /**
+ * Resumen de la semana de calendario (lunes a domingo) que contiene `hoy`.
+ *  - porPagar: pagos pendientes de hoy al domingo + todo lo vencido sin marcar
+ *  - porEntrar: ingresos pendientes de hoy al domingo
+ *  - alCierre: saldo actual − porPagar + porEntrar (los gastos extra ya están restados del saldo)
+ *  - gastosExtra / pagado / recibido: lo que ya se registró con fecha dentro de la semana
+ */
+function resumenSemana_(pendientes, movs, saldo, hoy) {
+  var inicio = addDays_(hoy, -((dow_(hoy) + 6) % 7));
+  var fin = addDays_(inicio, 6);
+  var r = { inicio: inicio, fin: fin, porPagar: 0, porEntrar: 0, gastosExtra: 0, ingresosExtra: 0, pagado: 0, recibido: 0, pagos: [], gastos: [] };
+
+  pendientes.forEach(function (o) {
+    if (o.tipo === 'ingreso') {
+      if (o.fecha >= hoy && o.fecha <= fin) r.porEntrar = round2_(r.porEntrar + o.monto);
+    } else if (o.fecha <= fin) {
+      r.porPagar = round2_(r.porPagar + o.monto);
+      r.pagos.push(o);
+    }
+  });
+
+  (movs || []).forEach(function (m) {
+    if (!m.vence || m.vence < inicio || m.vence > fin) return;
+    if (m.accion === 'gasto') { r.gastosExtra = round2_(r.gastosExtra + m.monto); r.gastos.push(m); }
+    if (m.accion === 'ingreso_extra') r.ingresosExtra = round2_(r.ingresosExtra + m.monto);
+    if (m.accion === 'pagado') r.pagado = round2_(r.pagado + m.monto);
+    if (m.accion === 'recibido') r.recibido = round2_(r.recibido + m.monto);
+  });
+
+  r.alCierre = round2_(saldo - r.porPagar + r.porEntrar);
+  return r;
+}
+
+/**
  * Arma lo que ve la app a partir de las ocurrencias pendientes (sin registro de pagado/recibido/omitido).
  * Proyección conservadora: en un mismo día primero salen los pagos y después entran los ingresos.
  * Lo vencido se cuenta como si saliera hoy; los ingresos pasados sin confirmar no se suman.

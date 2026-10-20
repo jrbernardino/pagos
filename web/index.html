@@ -76,6 +76,30 @@
   .hero .minimo.bad { background: var(--bad-soft); }
   .chart { margin-top: 12px; width: 100%; height: 72px; display: block; }
 
+  .week-title { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .week-title .t { font-weight: 600; }
+  .week-title .d { color: var(--muted); font-size: 13px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stat { background: var(--bg); border-radius: 12px; padding: 10px; min-width: 0; }
+  .stat .k { color: var(--muted); font-size: 12px; line-height: 1.2; }
+  .stat .v { font-weight: 700; font-size: 17px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat.cierre { background: var(--accent-soft); }
+  .stat.cierre.warn { background: var(--warn-soft); }
+  .stat.cierre.bad { background: var(--bad-soft); }
+  .stat .v.out { color: var(--ink); }
+  .stat .v.in { color: var(--ingreso); }
+  .week-foot { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+  .fab { position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 18px); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 28px; padding: 15px 20px; font: 600 16px/1 -apple-system, system-ui, sans-serif; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+  body { padding-bottom: calc(env(safe-area-inset-bottom) + 96px) !important; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 3px; margin-bottom: 14px; }
+  .seg button { border: 0; background: none; color: var(--muted); font: 600 15px -apple-system, system-ui, sans-serif; padding: 9px; border-radius: 9px; }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
+  .chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 18px; padding: 7px 12px; font: 500 14px -apple-system, system-ui, sans-serif; }
+  .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .hist button.item { cursor: pointer; }
+
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 4px 8px; font-weight: 600; }
   .week-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
   .week-head .t { font-weight: 600; }
@@ -139,6 +163,7 @@
 <main id="app"><div class="empty">Cargando…</div></main>
 <div class="status" id="status"></div>
 
+<button class="fab" id="fab">+ Gasto</button>
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
 <div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo">Deshacer</button></div>
@@ -230,10 +255,29 @@ function render() {
   const nivel = p.minimo < 0 ? 'bad' : p.minimo < v.colchon ? 'warn' : '';
   let h = '';
 
+  const s = v.semanaActual;
+  let semanaHtml = '';
+  if (s) {
+    const nivelCierre = s.alCierre < 0 ? 'bad' : s.alCierre < v.colchon ? 'warn' : '';
+    const pie = [];
+    if (s.gastosExtra) pie.push(`Gastos extra ${money(s.gastosExtra)}`);
+    if (s.pagado) pie.push(`Ya pagaste ${money(s.pagado)}`);
+    if (s.recibido || s.ingresosExtra) pie.push(`Ya entró ${money(s.recibido + s.ingresosExtra)}`);
+    semanaHtml = `
+    <div class="week-title"><span class="t">Esta semana</span><span class="d">${fmt(s.inicio)} – ${fmt(s.fin)}</span></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Por pagar</div><div class="v num out">${money(s.porPagar)}</div></div>
+      <div class="stat"><div class="k">Por entrar</div><div class="v num in">+${money(s.porEntrar)}</div></div>
+      <div class="stat cierre ${nivelCierre}"><div class="k">Al domingo</div><div class="v num">${money(s.alCierre)}</div></div>
+    </div>
+    ${pie.length ? `<div class="week-foot">${pie.join(' · ')}</div>` : ''}`;
+  }
+
   h += `<section class="card hero">
-    <div class="label">Saldo en cuenta</div>
+    <div class="label">En tu banco</div>
     <button class="saldo num" id="saldoBtn">${money(v.saldo)}</button>
-    <div class="sub">Toca para ajustar con tu banco</div>
+    <div class="sub">Toca para igualarlo con tu banco</div>
+    ${semanaHtml}
     <div class="minimo ${nivel}"><span>Punto más bajo</span><strong class="num">${money(p.minimo)} · ${fmt(p.minimoFecha)}</strong></div>
     ${grafica(p.puntos, p.minimoFecha)}
   </section>`;
@@ -259,18 +303,25 @@ function render() {
   h += `<div class="legend"><span><i class="dot casa"></i>Casa</span><span><i class="dot personal"></i>Personal</span><span><i class="dot ingreso"></i>Ingreso</span></div>`;
 
   if (v.recientes && v.recientes.length) {
-    h += `<h2>Últimos movimientos</h2><section class="card hist">${v.recientes.map((r) => `
-      <div class="item"><span class="mid"><span class="c">${esc(r.concepto)}</span><span class="f">${esc(etiquetaAccion(r.accion))} · ${r.vence ? fmt(r.vence) : ''}</span></span>
-      <span class="m num ${r.accion === 'recibido' ? 'in' : ''}">${r.accion === 'omitido' ? '—' : (r.accion === 'recibido' ? '+' : r.accion === 'ajuste' ? '' : '−') + money(r.monto)}</span></div>`).join('')}</section>`;
+    h += `<h2>Últimos movimientos</h2><section class="card hist">${v.recientes.map((r) => {
+      const entra = r.accion === 'recibido' || r.accion === 'ingreso_extra';
+      const signo = r.accion === 'omitido' ? '' : entra ? '+' : r.accion === 'ajuste' ? '' : '−';
+      const tag = r.accion === 'ajuste' ? 'div' : 'button';
+      return `<${tag} class="item" ${tag === 'button' ? `data-mov="${esc(r.id)}"` : ''}>
+        <i class="dot ${entra ? 'ingreso' : r.accion === 'gasto' ? 'personal' : 'casa'}"></i>
+        <span class="mid"><span class="c">${esc(r.concepto)}</span><span class="f">${esc(etiquetaAccion(r.accion))}${r.vence ? ' · ' + fmt(r.vence) : ''}</span></span>
+        <span class="m num ${entra ? 'in' : ''}">${r.accion === 'omitido' ? '—' : signo + money(r.monto)}</span></${tag}>`;
+    }).join('')}</section>`;
   }
 
   $('#app').innerHTML = h;
   $('#saldoBtn').onclick = hojaSaldo;
   document.querySelectorAll('[data-id]').forEach((b) => b.onclick = () => hojaItem(b.dataset.id));
+  document.querySelectorAll('[data-mov]').forEach((b) => b.onclick = () => hojaMov(b.dataset.mov));
 }
 
 function etiquetaAccion(a) {
-  return { pagado: 'Pagado', recibido: 'Recibido', omitido: 'Omitido', ajuste: 'Ajuste de saldo' }[a] || a;
+  return { pagado: 'Pagado', recibido: 'Recibido', omitido: 'Omitido', ajuste: 'Ajuste de saldo', gasto: 'Gasto extra', ingreso_extra: 'Ingreso extra' }[a] || a;
 }
 
 function fila(o, hoy) {
@@ -354,6 +405,55 @@ function hojaSaldo() {
   $('#cancel').onclick = cerrarHoja;
 }
 
+const CATEGORIAS = ['Comida', 'Gasolina', 'Súper', 'Uber', 'Salida', 'Farmacia', 'Otro'];
+
+function hoyLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function hojaGasto() {
+  let modo = 'gasto';
+  abrirHoja(`
+    <div class="seg"><button class="on" data-modo="gasto">Gasto</button><button data-modo="ingreso_extra">Ingreso extra</button></div>
+    <label class="field"><span>$</span><input id="monto" class="num" inputmode="decimal" placeholder="0"></label>
+    <div class="chips" id="chips">${CATEGORIAS.map((c) => `<button class="chip" data-cat="${c}">${c}</button>`).join('')}</div>
+    <label class="field"><input id="concepto" class="txt" placeholder="¿En qué fue?" maxlength="80"></label>
+    <label class="field"><input id="fecha" class="txt" type="date" value="${hoyLocal()}"></label>
+    <button class="btn primary" id="ok">Guardar</button>
+    <button class="btn plain" id="cancel">Cancelar</button>`);
+  document.querySelectorAll('[data-modo]').forEach((b) => b.onclick = () => {
+    modo = b.dataset.modo;
+    document.querySelectorAll('[data-modo]').forEach((x) => x.classList.toggle('on', x === b));
+    $('#chips').style.display = modo === 'gasto' ? '' : 'none';
+  });
+  document.querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => {
+    document.querySelectorAll('[data-cat]').forEach((x) => x.classList.toggle('on', x === b));
+    if (b.dataset.cat !== 'Otro') $('#concepto').value = b.dataset.cat;
+    else { $('#concepto').value = ''; $('#concepto').focus(); }
+  });
+  setTimeout(() => $('#monto').focus(), 250);
+  $('#ok').onclick = () => {
+    const m = parseFloat(String($('#monto').value).replace(/[^0-9.]/g, ''));
+    if (!(m > 0)) { $('#monto').focus(); return; }
+    const concepto = $('#concepto').value.trim();
+    accion({ action: modo, monto: m, concepto, fecha: $('#fecha').value }, `${concepto || (modo === 'gasto' ? 'Gasto' : 'Ingreso')} · ${money(m)}`);
+  };
+  $('#cancel').onclick = cerrarHoja;
+}
+
+function hojaMov(id) {
+  const r = (vista.recientes || []).find((x) => x.id === id);
+  if (!r) return;
+  abrirHoja(`
+    <h3>${esc(r.concepto)}</h3>
+    <div class="f">${esc(etiquetaAccion(r.accion))} · ${money(r.monto)}${r.vence ? ' · ' + fmt(r.vence) : ''}</div>
+    <button class="btn ghost" id="undo">Deshacer este movimiento</button>
+    <button class="btn plain" id="cancel">Cerrar</button>`);
+  $('#undo').onclick = () => accion({ action: 'deshacer', id }, 'Deshecho');
+  $('#cancel').onclick = cerrarHoja;
+}
+
 // ─── Toast con deshacer ──────────────────────────────────────
 let toastTimer;
 function toast(msg, undoId) {
@@ -384,7 +484,9 @@ function pantallaSetup(aviso) {
 
 // ─── Arranque ────────────────────────────────────────────────
 $('#refresh').onclick = cargar;
+$('#fab').onclick = () => { if (vista) hojaGasto(); };
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cargar(); });
+setInterval(() => { if (document.visibilityState === 'visible' && !$('#sheet').classList.contains('on')) cargar(); }, 60000);
 const cache = JSON.parse(store.get('hub.cache') || 'null');
 if (cache && cfg.token) { vista = cache.vista; render(); }
 cargar();

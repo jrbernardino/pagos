@@ -139,6 +139,8 @@ function doPost(e) {
         case 'omitir': registrar_(body.id, 'omitido', 0); break;
         case 'deshacer': deshacer_(body.id); break;
         case 'saldo': ajustarSaldo_(body.monto); break;
+        case 'gasto': movimientoExtra_('gasto', body.concepto, body.monto, body.fecha); break;
+        case 'ingreso_extra': movimientoExtra_('ingreso_extra', body.concepto, body.monto, body.fecha); break;
         default: throw new Error('Acción no válida');
       }
     } finally {
@@ -176,10 +178,14 @@ function obtenerVista_() {
   var pendientes = generarOcurrencias_(leerPagos_(), desde, hasta)
     .filter(function (o) { return !registro.porId[o.id]; });
 
-  var vista = armarVista_(pendientes, parseFloat(cfg.saldo) || 0, hoy, hasta);
+  var saldo = parseFloat(cfg.saldo) || 0;
+  var vista = armarVista_(pendientes, saldo, hoy, hasta);
+  vista.semanaActual = resumenSemana_(pendientes, registro.filas, saldo, hoy);
   vista.saldoFecha = cfg.saldo_fecha;
   vista.colchon = parseFloat(cfg.colchon) || 0;
-  vista.recientes = registro.filas.slice(-8).reverse();
+  vista.recientes = registro.filas.slice(-10).reverse().map(function (r) {
+    return { id: r.id, concepto: r.concepto, monto: r.monto, vence: r.vence, accion: r.accion };
+  });
   return vista;
 }
 
@@ -214,10 +220,25 @@ function deshacer_(occId) {
   if (!r) throw new Error('No hay nada que deshacer');
 
   var saldo = parseFloat(leerConfig_().saldo) || 0;
-  if (r.accion === 'pagado') saldo = round2_(saldo + r.monto);
-  if (r.accion === 'recibido') saldo = round2_(saldo - r.monto);
+  if (r.accion === 'pagado' || r.accion === 'gasto') saldo = round2_(saldo + r.monto);
+  if (r.accion === 'recibido' || r.accion === 'ingreso_extra') saldo = round2_(saldo - r.monto);
   escribirConfig_('saldo', String(saldo));
   sr.deleteRow(r.fila);
+}
+
+/** Gasto o ingreso que no está en Hub_Pagos (comida, gasolina, un pago extra...). Mueve el saldo al momento. */
+function movimientoExtra_(accion, concepto, monto, fecha) {
+  var m = round2_(parseFloat(monto));
+  if (!(m > 0)) throw new Error('Monto inválido');
+  var c = String(concepto || '').trim().slice(0, 80) || (accion === 'gasto' ? 'Gasto' : 'Ingreso extra');
+  var f = /^\d{4}-\d{2}-\d{2}$/.test(String(fecha || '')) ? String(fecha) : hoyIso_();
+
+  var saldo = parseFloat(leerConfig_().saldo) || 0;
+  saldo = round2_(accion === 'gasto' ? saldo - m : saldo + m);
+  escribirConfig_('saldo', String(saldo));
+
+  var id = accion + '_' + Utilities.getUuid().slice(0, 8);
+  hojaReg_().appendRow([new Date(), id, c, m, f, accion, saldo]);
 }
 
 function ajustarSaldo_(monto) {
