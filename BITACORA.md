@@ -19,3 +19,4 @@
 - Recordatorios en la app (Pagos → Recordatorios): ver, crear, editar, pausar y eliminar filas de Hub_Pagos (acciones guardar_pago / borrar_pago). Nueva frecuencia `unica`. POST con `corto: true` regresa {saldo, porPagar, alCierre, mensaje} para el atajo del iPhone.
 - Jonathan confirmó nómina neta 8,400 y transferencia de Tania 2,488.13 (15 y 30). Bautizo dado de alta desde la app (única, 12 dic, $6,000).
 - "Puedes gastar esta semana" en Inicio (libreParaGastar_: ritmo parejo que no rompe el colchón en 60 días) con hoja que explica el cálculo. GET ?corto=1 y widget de Scriptable (widget/pagos-widget.js).
+- Proyección a 120 días (horizonte mínimo en Code.gs) y rangos de 3 y 4 meses en la gráfica. El 'Puedes gastar' ahora considera los 120 días.
