@@ -48,8 +48,8 @@
   .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 
   /* Fondo */
-  .bg { position: fixed; top: 0; left: 0; right: 0; bottom: auto; height: calc(100vh + env(safe-area-inset-top) + env(safe-area-inset-bottom) + 60px); height: calc(100lvh + env(safe-area-inset-bottom) + 60px); z-index: -2; background: #08080a url('bg.jpg') center / cover no-repeat; }
-  .bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,8,10,.35) 0%, rgba(8,8,10,.55) 55%, rgba(8,8,10,.8) 100%); }
+  .bg { position: fixed; inset: 0; z-index: -2; background: #08080a url('bg.jpg') center / cover no-repeat; }
+  .bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,8,10,.35) 0%, rgba(8,8,10,.55) 50%, rgba(8,8,10,.8) 78%, #08080a 100%); }
 
   /* Barra superior */
   .top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px;
