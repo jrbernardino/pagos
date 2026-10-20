@@ -1,7 +1,7 @@
 # TAREAS — Hub de pagos
 
 ## Pendiente
-- [ ] Configurar secretos CLASPRC_JSON, SCRIPT_ID y HUB_TOKEN y correr el workflow Apps Script (despliega el backend v2)
+- [x] Configurar secretos CLASPRC_JSON, SCRIPT_ID y HUB_TOKEN y correr el workflow Apps Script (despliega el backend v2)
 - [x] Pegar Motor.gs / Code.gs en el Sheet, correr `setup` y desplegar como Web App
 - [ ] Ajustar en Hub_Pagos: neto real de nómina y monto/días de la transferencia de Tania
 - [x] Publicar `web/` en GitHub Pages (https://jrbernardino.github.io/pagos/)
