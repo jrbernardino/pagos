@@ -135,6 +135,38 @@ function resumenSemana_(pendientes, movs, saldo, hoy) {
 }
 
 /**
+ * Cuánto puedes gastar sin que la proyección baje del colchón en ningún día del horizonte.
+ * Supone un gasto parejo por día (r): el saldo del día i baja r·(i+1). El r máximo que respeta
+ * el colchón en todos los días es min((saldo_i − colchón) / (i+1)).
+ *  - porSemana: ritmo sostenible (7·r)
+ *  - semana:    lo que toca de hoy al domingo (r · días restantes)
+ *  - limite:    lo máximo que podrías gastar HOY de golpe sin bajar del colchón (mín − colchón)
+ *  - cuello:    el día que define el ritmo (normalmente la semana pesada que viene)
+ */
+function libreParaGastar_(puntos, colchon, hoy) {
+  if (!puntos || !puntos.length) return null;
+  var r = Infinity, cuello = puntos[0].fecha, minimo = Infinity, minFecha = puntos[0].fecha;
+  for (var i = 0; i < puntos.length; i++) {
+    var holgura = puntos[i].saldo - colchon;
+    var tasa = holgura / (i + 1);
+    if (tasa < r) { r = tasa; cuello = puntos[i].fecha; }
+    if (puntos[i].saldo < minimo) { minimo = puntos[i].saldo; minFecha = puntos[i].fecha; }
+  }
+  var diasSemana = 7 - ((dow_(hoy) + 6) % 7);        // de hoy al domingo, incluyendo hoy
+  var piso10 = function (n) { return Math.max(0, Math.floor(n / 10) * 10); };
+  return {
+    porDia: Math.max(0, round2_(r)),
+    porSemana: piso10(r * 7),
+    semana: piso10(r * diasSemana),
+    diasSemana: diasSemana,
+    limite: piso10(minimo - colchon),
+    cuello: cuello,
+    faltante: minimo < colchon ? round2_(colchon - minimo) : 0,
+    faltanteFecha: minimo < colchon ? minFecha : ''
+  };
+}
+
+/**
  * Arma lo que ve la app a partir de las ocurrencias pendientes (sin registro de pagado/recibido/omitido).
  * Proyección conservadora: en un mismo día primero salen los pagos y después entran los ingresos.
  * Lo vencido se cuenta como si saliera hoy; los ingresos pasados sin confirmar no se suman.

@@ -102,6 +102,15 @@
   .pill { border: 1px solid var(--border); background: var(--glass-subtle); border-radius: 20px; padding: 5px 10px; font-size: 12px; color: var(--text-2); }
   .pill b { font-family: var(--font-num); color: var(--text); font-weight: 600; }
 
+  .libre { display: block; width: 100%; text-align: left; margin-top: 14px; padding: 13px 14px; border-radius: 16px; border: 1px solid rgba(255,214,0,.4);
+           background: linear-gradient(135deg, rgba(255,214,0,.16), rgba(255,140,0,.06)); box-shadow: 0 0 22px rgba(255,214,0,.10); }
+  .libre .k { color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .libre .v { font: 700 30px/1.1 var(--font-num); color: var(--gold-bright); margin-top: 4px; letter-spacing: -.02em; }
+  .libre .s { color: var(--text-2); font-size: 12.5px; margin-top: 4px; }
+  .libre.bad { border-color: rgba(244,63,94,.5); background: linear-gradient(135deg, rgba(244,63,94,.18), rgba(244,63,94,.05)); }
+  .libre.bad .k, .libre.bad .v { color: var(--rose); }
+  .explica p { color: var(--text-2); font-size: 14px; margin: 0 0 10px; }
+  .explica b { color: var(--text); }
   /* Filas */
   .row { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: 0; border-top: 1px solid rgba(255,255,255,.07); padding: 11px 0; text-align: left; }
   .list > .row:first-child { border-top: 0; padding-top: 2px; }
@@ -399,6 +408,14 @@ function renderInicio() {
     <div class="label">En tu banco</div>
     <button class="saldo num" id="saldoBtn">${saldoHtml(v.saldo)}</button>
     <div class="hint">Toca para igualarlo con tu banco</div>`;
+  const l = v.libre;
+  if (l) {
+    h += l.faltante
+      ? `<button class="libre bad" id="libreBtn"><div class="k">Vas corto</div><div class="v num">−${money(l.faltante)}</div>
+           <div class="s">El ${fmt(l.faltanteFecha)} quedarías abajo de tu colchón. Mejor no gastar extra por ahora.</div></button>`
+      : `<button class="libre" id="libreBtn"><div class="k">Puedes gastar · hasta el domingo</div><div class="v num">${money(l.semana)}</div>
+           <div class="s">Ritmo de ${money(l.porSemana)} por semana sin bajar de tu colchón</div></button>`;
+  }
   if (s) {
     const pills = [];
     if (s.gastosExtra) pills.push(`<button class="pill" data-go="movs">Gastos extra <b>${money(s.gastosExtra)}</b></button>`);
@@ -428,6 +445,7 @@ function renderInicio() {
 
   $('#v-inicio').innerHTML = h;
   $('#saldoBtn').onclick = hojaSaldo;
+  if ($('#libreBtn')) $('#libreBtn').onclick = hojaLibre;
   enlazar($('#v-inicio'));
 }
 
@@ -719,6 +737,23 @@ function hojaItem(id) {
     accion({ action: ing ? 'recibir' : 'pagar', id, monto: m }, `${o.concepto} · ${ing ? 'recibido' : 'pagado'}`, id);
   };
   $('#skip').onclick = () => accion({ action: 'omitir', id }, `${o.concepto} · omitido`, id);
+  $('#cancel').onclick = cerrarHoja;
+}
+
+function hojaLibre() {
+  const l = vista.libre;
+  if (!l) return;
+  abrirHoja(`<div class="explica">
+    <h3>¿De dónde sale?</h3>
+    <div class="f">Ya descuenta todos tus pagos, la despensa y tu colchón de ${money(vista.colchon)}.</div>
+    <p>Si gastas parejo <b>${money(l.porSemana)} por semana</b> (≈ ${money(l.porDia)} al día), tu saldo no baja del colchón en los próximos 60 días.</p>
+    <p>De hoy al domingo te tocan <b>${money(l.semana)}</b>. Lo que gastes con el botón + se descuenta solo.</p>
+    <p>El día que más te aprieta es el <b>${fmt(l.cuello)}</b>; por eso el número no es más alto.</p>
+    <p>Si de plano necesitas, hoy podrías gastar hasta <b>${money(l.limite)}</b> de golpe sin bajar del colchón, pero te quedarías sin margen para lo que sigue.</p>
+    </div>
+    <button class="btn ghost" id="verProy">Ver proyección</button>
+    <button class="btn plain" id="cancel">Cerrar</button>`);
+  $('#verProy').onclick = () => { cerrarHoja(); irA('grafica'); };
   $('#cancel').onclick = cerrarHoja;
 }
 

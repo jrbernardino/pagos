@@ -48,3 +48,10 @@ Cuando cambies `Code.gs` o `Motor.gs`: **Implementar → Gestionar implementacio
 ## Seguridad
 
 La Web App es pública, pero responde solo si el token coincide. Si lo compartes por error: **Hub de pagos → Generar token nuevo** y vuelve a pegarlo en la app.
+
+## Widget (Scriptable)
+
+1. Instala **Scriptable** desde la App Store.
+2. Crea un script nuevo, pega el contenido de `widget/pagos-widget.js` y llámalo "Pagos".
+3. Ejecútalo una vez dentro de Scriptable: te pide el token y lo guarda en el Llavero.
+4. En la pantalla de inicio agrega un widget de Scriptable (pequeño o mediano) → mantenlo presionado → Editar widget → Script: Pagos. También funciona en la pantalla de bloqueo.

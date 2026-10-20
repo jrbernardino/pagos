@@ -122,8 +122,29 @@ function doGet(e) {
   var p = (e && e.parameter) || {};
   return responder_(function () {
     validarToken_(p.token);
-    return obtenerVista_();
+    var vista = obtenerVista_();
+    return p.corto ? resumenCorto_(vista) : vista;
   });
+}
+
+/** Respuesta mínima para el atajo del Action Button y el widget de Scriptable. */
+function resumenCorto_(vista) {
+  var s = vista.semanaActual, l = vista.libre || {};
+  var prox = [];
+  vista.vencidos.concat.apply(vista.vencidos, vista.semanas.map(function (w) { return w.items; }))
+    .forEach(function (o) { if (o.tipo !== 'ingreso' && prox.length < 3) prox.push({ concepto: o.concepto, monto: o.monto, fecha: o.fecha }); });
+  return {
+    hoy: vista.hoy,
+    saldo: vista.saldo,
+    porPagar: s.porPagar,
+    porEntrar: s.porEntrar,
+    alCierre: s.alCierre,
+    libreSemana: l.semana || 0,
+    librePorSemana: l.porSemana || 0,
+    colchon: vista.colchon,
+    proximos: prox,
+    mensaje: 'Saldo ' + fmtMx_(vista.saldo) + ' · libre esta semana ' + fmtMx_(l.semana || 0)
+  };
 }
 
 function doPost(e) {
@@ -149,15 +170,7 @@ function doPost(e) {
       lock.releaseLock();
     }
     var vista = obtenerVista_();
-    if (body.corto) {
-      // Respuesta mínima para el atajo del iPhone
-      var s = vista.semanaActual;
-      return {
-        saldo: vista.saldo, porPagar: s.porPagar, alCierre: s.alCierre,
-        mensaje: 'Saldo ' + fmtMx_(vista.saldo) + ' · al domingo ' + fmtMx_(s.alCierre)
-      };
-    }
-    return vista;
+    return body.corto ? resumenCorto_(vista) : vista;
   });
 }
 
@@ -194,6 +207,7 @@ function obtenerVista_() {
   vista.semanaActual = resumenSemana_(pendientes, registro.filas, saldo, hoy);
   vista.saldoFecha = cfg.saldo_fecha;
   vista.colchon = parseFloat(cfg.colchon) || 0;
+  vista.libre = libreParaGastar_(vista.proyeccion.puntos, vista.colchon, hoy);
   var pagos = leerPagos_();
   vista.pagos = pagos.map(function (p) {
     var sig = pendientes.filter(function (o) { return o.pagoId === p.id && o.fecha >= hoy; })[0];
