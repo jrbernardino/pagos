@@ -194,7 +194,7 @@ function validarToken_(t) {
 function obtenerVista_() {
   var cfg = leerConfig_();
   var hoy = hoyIso_();
-  var horizonte = parseInt(cfg.horizonte_dias, 10) || 60;
+  var horizonte = Math.max(parseInt(cfg.horizonte_dias, 10) || 0, 120); // la gráfica llega a 120 días
   var hasta = addDays_(hoy, horizonte);
   var desde = cfg.inicio_hub > addDays_(hoy, -45) ? cfg.inicio_hub : addDays_(hoy, -45);
 

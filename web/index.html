@@ -155,7 +155,7 @@
 
   /* Gráfica grande */
   .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: rgba(0,0,0,.25); border: 1px solid var(--border); border-radius: 12px; padding: 3px; }
-  .seg button { border: 0; background: none; color: var(--muted); font-weight: 600; font-size: 13.5px; padding: 8px; border-radius: 9px; }
+  .seg button { border: 0; background: none; color: var(--muted); font-weight: 600; font-size: 13px; padding: 8px 2px; border-radius: 9px; white-space: nowrap; }
   .seg button.on { background: rgba(255,255,255,.12); color: var(--text); box-shadow: inset 0 1px 1px rgba(255,255,255,.15); }
   .chart-wrap { position: relative; margin: 12px -4px 0; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
   .chart-wrap svg { display: block; width: 100%; }
@@ -287,7 +287,7 @@ let ocupado = false;
 let tab = store.get('hub.tab') || 'inicio';
 let semanaSel = null;
 let subPagos = store.get('hub.sub') || 'semanas';
-let rango = 30;
+let rango = +(store.get('hub.rango') || 30);
 let actualizado = null;
 
 // ─── API ─────────────────────────────────────────────────────
@@ -630,14 +630,16 @@ function enlazar(root) {
 }
 
 // ─── Gráfica interactiva ─────────────────────────────────────
+const RANGOS = [[14, '2 sem'], [30, '1 mes'], [60, '2 meses'], [90, '3 meses'], [120, '4 meses']];
 function renderGrafica() {
   const v = vista, todos = v.proyeccion.puntos;
+  if (rango > todos.length - 1) rango = 30;
   const pts = todos.slice(0, rango + 1);
   const ys = pts.map((p) => p.saldo);
   const minI = ys.indexOf(Math.min(...ys));
   $('#v-grafica').innerHTML = `
     <section class="glass hero">
-      <div class="seg" id="rangos">${[14, 30, 60].map((r) => `<button data-r="${r}" class="${r === rango ? 'on' : ''}">${r} días</button>`).join('')}</div>
+      <div class="seg" id="rangos">${RANGOS.map(([r, n]) => `<button data-r="${r}" class="${r === rango ? 'on' : ''}" ${r > todos.length - 1 ? 'disabled style="opacity:.3"' : ''}>${n}</button>`).join('')}</div>
       <div class="readout"><div><div class="d" id="rdD"></div><div class="v num" id="rdV"></div></div><div class="delta" id="rdX"></div></div>
       <div class="chart-wrap" id="chart"></div>
       <div class="stats3" style="margin-top:12px">
@@ -647,7 +649,7 @@ function renderGrafica() {
       </div>
     </section>
     <section class="glass"><div class="ctitle"><h3 id="dayT">Ese día</h3></div><div class="list" id="dayL"></div></section>`;
-  $$('[data-r]').forEach((b) => b.onclick = () => { rango = +b.dataset.r; renderGrafica(); });
+  $$('[data-r]').forEach((b) => b.onclick = () => { if (b.disabled) return; rango = +b.dataset.r; store.set('hub.rango', rango); renderGrafica(); });
   dibujar(pts, minI);
 }
 
@@ -662,7 +664,7 @@ function dibujar(pts, sel) {
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.saldo).toFixed(1)}`).join('');
   const ev = eventosPorDia();
   const dots = pts.map((p, i) => (ev[p.fecha] || []).some((o) => o.tipo !== 'ingreso') ? `<circle cx="${x(i).toFixed(1)}" cy="${y(p.saldo).toFixed(1)}" r="2.6" fill="#ff8c00"/>` : '').join('');
-  const meses = pts.map((p, i) => p.fecha.endsWith('-01') ? i : -1).filter((i) => i > 0);
+  const meses = pts.map((p, i) => p.fecha.endsWith('-01') ? i : -1).filter((i) => i > 0 && x(i) - x(0) > 52);
   const lejos = (i) => i > 3 && i < pts.length - 4 && meses.every((m) => Math.abs(m - i) > 3);
   const ticks = pts.map((p, i) => ({ p, i })).filter(({ p, i }) => i === 0 || meses.includes(i) || (pts.length <= 31 && toDate(p.fecha).getUTCDay() === 1 && lejos(i)))
     .map(({ p, i }) => `<text x="${x(i).toFixed(1)}" y="${H - 5}" fill="rgba(255,255,255,.42)" font-size="10.5" text-anchor="${i === 0 ? 'start' : 'middle'}" font-family="Plus Jakarta Sans, system-ui">${fmtCorto(p.fecha)}</text>`).join('');
@@ -746,7 +748,7 @@ function hojaLibre() {
   abrirHoja(`<div class="explica">
     <h3>¿De dónde sale?</h3>
     <div class="f">Ya descuenta todos tus pagos, la despensa y tu colchón de ${money(vista.colchon)}.</div>
-    <p>Si gastas parejo <b>${money(l.porSemana)} por semana</b> (≈ ${money(l.porDia)} al día), tu saldo no baja del colchón en los próximos 60 días.</p>
+    <p>Si gastas parejo <b>${money(l.porSemana)} por semana</b> (≈ ${money(l.porDia)} al día), tu saldo no baja del colchón en los próximos ${vista.proyeccion.puntos.length - 1} días.</p>
     <p>De hoy al domingo te tocan <b>${money(l.semana)}</b>. Lo que gastes con el botón + se descuenta solo.</p>
     <p>El día que más te aprieta es el <b>${fmt(l.cuello)}</b>; por eso el número no es más alto.</p>
     <p>Si de plano necesitas, hoy podrías gastar hasta <b>${money(l.limite)}</b> de golpe sin bajar del colchón, pero te quedarías sin margen para lo que sigue.</p>
