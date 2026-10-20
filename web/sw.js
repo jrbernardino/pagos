@@ -1,6 +1,6 @@
 // Cache del "cascarón" de la app para que abra sin red. Los datos (Apps Script) nunca se cachean aquí;
 // la app guarda la última respuesta en localStorage.
-const CACHE = 'pagos-v9';
+const CACHE = 'pagos-v10';
 const SHELL = ['./', 'index.html', 'manifest.json', 'bg.jpg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -20,7 +20,8 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   // Red primero (para que los cambios de la app lleguen), caché si no hay conexión.
   e.respondWith(
-    fetch(e.request)
+    // no-cache: revalida siempre con GitHub Pages (ETag) en lugar de usar su caché HTTP de 10 min
+    fetch(e.request, { cache: 'no-cache' })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));

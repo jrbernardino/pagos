@@ -894,7 +894,12 @@ irA(tab);
 const cache = JSON.parse(store.get('hub.cache') || 'null');
 if (cache && cfg.token) { vista = cache.vista; render(); }
 cargar();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {});
+  // Cuando entra una versión nueva de la app, recarga una vez para usarla
+  let recargado = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!recargado) { recargado = true; location.reload(); } });
+}
 </script>
 </body>
 </html>
