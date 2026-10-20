@@ -21,3 +21,4 @@
 - "Puedes gastar esta semana" en Inicio (libreParaGastar_: ritmo parejo que no rompe el colchón en 60 días) con hoja que explica el cálculo. GET ?corto=1 y widget de Scriptable (widget/pagos-widget.js).
 - Proyección a 120 días (horizonte mínimo en Code.gs) y rangos de 3 y 4 meses en la gráfica. El 'Puedes gastar' ahora considera los 120 días.
 - Temas: Dorado (original), Claro y Bosque, con selector (ícono de paleta en el encabezado). Se quitó el morado: 'personal' ahora es azul (dorado/claro) o ámbar (bosque). Todos los colores pasan por variables CSS por tema.
+- Tema único "Bosque dorado" (fondo verde oscuro + acentos dorados). Se quitaron el selector de temas y bg.jpg.

@@ -8,18 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pagos">
-<meta name="theme-color" content="#08080a">
-<script>
-  // Aplica el tema antes de pintar para que no parpadee
-  (function () {
-    var t = 'dorado';
-    try { t = localStorage.getItem('hub.tema') || 'dorado'; } catch (e) {}
-    document.documentElement.setAttribute('data-theme', t);
-    var claro = t === 'claro';
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', claro ? '#f4f1ea' : t === 'bosque' ? '#06100d' : '#08080a');
-    document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute('content', claro ? 'default' : 'black-translucent');
-  })();
-</script>
+<meta name="theme-color" content="#06100d">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -32,67 +21,26 @@
     --font-num: 'Space Grotesk', -apple-system, system-ui, sans-serif;
     --tabbar-h: 64px;
   }
-  /* ───── Temas ───── */
-  :root, [data-theme="dorado"] {
-    color-scheme: dark;
-    --bg: #08080a; --fg: 255,255,255;
-    --text: #ffffff; --text-2: rgba(255,255,255,.72); --muted: rgba(255,255,255,.46);
-    --acc-rgb: 255,214,0; --acc: #ffd600; --acc-hi: #fff04d; --acc2-rgb: 255,140,0; --acc2: #ff8c00; --acc-ink: #141414;
-    --ok-rgb: 16,185,129; --ok: #10b981; --bad-rgb: 244,63,94; --bad: #f43f5e; --warn-rgb: 255,140,0; --warn: #ff8c00;
-    --casa-rgb: 45,212,191; --casa: #2dd4bf; --personal-rgb: 96,165,250; --personal: #60a5fa; --gasto-rgb: 255,140,0; --gasto: #ff8c00;
-    --glass: linear-gradient(135deg, rgba(255,255,255,.07) 0%, rgba(22,22,30,.46) 50%, rgba(12,12,18,.62) 100%);
-    --glass-strong: linear-gradient(135deg, rgba(255,255,255,.10) 0%, rgba(26,28,38,.62) 50%, rgba(14,15,22,.80) 100%);
-    --glass-subtle: rgba(255,255,255,.045); --border: rgba(255,255,255,.13); --border-bright: rgba(255,255,255,.28);
-    --shadow: 0 10px 28px -6px rgba(0,0,0,.6), inset 0 1px 1px rgba(255,255,255,.18);
-    --bg-layer: #08080a url('bg.jpg') center / cover no-repeat;
-    --bg-overlay: linear-gradient(180deg, rgba(8,8,10,.35) 0%, rgba(8,8,10,.55) 50%, rgba(8,8,10,.8) 78%, #08080a 100%);
-    --top-bg: linear-gradient(180deg, rgba(8,8,10,.85) 0%, rgba(8,8,10,.55) 70%, rgba(8,8,10,0) 100%);
-    --tab-bg: linear-gradient(135deg, rgba(40,40,52,.62), rgba(14,14,20,.78));
-    --sheet-bg: linear-gradient(160deg, rgba(44,44,56,.9), rgba(14,14,20,.97));
-    --toast-bg: linear-gradient(135deg, rgba(50,50,62,.92), rgba(20,20,28,.96));
-    --input-bg: rgba(0,0,0,.3); --seg-bg: rgba(0,0,0,.25); --seg-on: rgba(255,255,255,.12);
-    --float-shadow: 0 16px 40px rgba(0,0,0,.6);
-  }
-  [data-theme="claro"] {
-    color-scheme: light;
-    --bg: #f4f1ea; --fg: 28,30,36;
-    --text: #17181c; --text-2: rgba(23,24,28,.72); --muted: rgba(23,24,28,.5);
-    --acc-rgb: 245,158,11; --acc: #f59e0b; --acc-hi: #b45309; --acc2-rgb: 234,88,12; --acc2: #ea580c; --acc-ink: #1f1406;
-    --ok-rgb: 5,150,105; --ok: #059669; --bad-rgb: 225,29,72; --bad: #e11d48; --warn-rgb: 217,119,6; --warn: #d97706;
-    --casa-rgb: 13,148,136; --casa: #0d9488; --personal-rgb: 37,99,235; --personal: #2563eb; --gasto-rgb: 234,88,12; --gasto: #ea580c;
-    --glass: linear-gradient(135deg, rgba(255,255,255,.86), rgba(255,255,255,.64));
-    --glass-strong: linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,253,248,.78));
-    --glass-subtle: rgba(28,30,36,.035); --border: rgba(28,30,36,.08); --border-bright: rgba(28,30,36,.12);
-    --shadow: 0 10px 28px -12px rgba(80,60,20,.25), inset 0 1px 0 rgba(255,255,255,.9);
-    --bg-layer: radial-gradient(60% 38% at 90% 4%, rgba(251,191,36,.42), transparent 70%),
-                radial-gradient(55% 35% at 0% 42%, rgba(45,212,191,.24), transparent 70%),
-                radial-gradient(70% 40% at 100% 96%, rgba(251,146,60,.26), transparent 70%), #f4f1ea;
-    --bg-overlay: none;
-    --top-bg: linear-gradient(180deg, rgba(244,241,234,.94) 0%, rgba(244,241,234,.65) 70%, rgba(244,241,234,0) 100%);
-    --tab-bg: linear-gradient(135deg, rgba(255,255,255,.92), rgba(250,248,243,.84));
-    --sheet-bg: linear-gradient(160deg, rgba(255,255,255,.98), rgba(248,245,239,.99));
-    --toast-bg: linear-gradient(135deg, rgba(30,30,36,.94), rgba(20,20,26,.97));
-    --input-bg: rgba(28,30,36,.045); --seg-bg: rgba(28,30,36,.05); --seg-on: #ffffff;
-    --float-shadow: 0 14px 34px rgba(80,60,20,.18);
-  }
-  [data-theme="bosque"] {
+  /* ───── Tema: Bosque dorado ───── */
+  :root {
     color-scheme: dark;
     --bg: #06100d; --fg: 255,255,255;
-    --text: #f2fbf7; --text-2: rgba(242,251,247,.72); --muted: rgba(242,251,247,.46);
-    --acc-rgb: 52,211,153; --acc: #34d399; --acc-hi: #a7f3d0; --acc2-rgb: 163,230,53; --acc2: #a3e635; --acc-ink: #04221a;
-    --ok-rgb: 74,222,128; --ok: #4ade80; --bad-rgb: 251,113,133; --bad: #fb7185; --warn-rgb: 251,191,36; --warn: #fbbf24;
-    --casa-rgb: 56,189,248; --casa: #38bdf8; --personal-rgb: 251,191,36; --personal: #fbbf24; --gasto-rgb: 251,146,60; --gasto: #fb923c;
+    --text: #f4fbf7; --text-2: rgba(244,251,247,.74); --muted: rgba(244,251,247,.48);
+    --acc-rgb: 255,214,0; --acc: #ffd600; --acc-hi: #ffe34d; --acc2-rgb: 255,160,0; --acc2: #ffa000; --acc-ink: #1a1404;
+    --ok-rgb: 74,222,128; --ok: #4ade80; --bad-rgb: 251,113,133; --bad: #fb7185; --warn-rgb: 255,160,0; --warn: #ffa000;
+    --casa-rgb: 45,212,191; --casa: #2dd4bf; --personal-rgb: 96,165,250; --personal: #60a5fa; --gasto-rgb: 251,146,60; --gasto: #fb923c;
     --glass: linear-gradient(135deg, rgba(255,255,255,.07) 0%, rgba(14,30,25,.5) 50%, rgba(6,16,13,.66) 100%);
     --glass-strong: linear-gradient(135deg, rgba(255,255,255,.10) 0%, rgba(16,36,30,.64) 50%, rgba(7,18,15,.82) 100%);
     --glass-subtle: rgba(255,255,255,.045); --border: rgba(255,255,255,.12); --border-bright: rgba(255,255,255,.24);
     --shadow: 0 10px 28px -6px rgba(0,0,0,.55), inset 0 1px 1px rgba(255,255,255,.14);
-    --bg-layer: radial-gradient(70% 45% at 85% 0%, rgba(16,185,129,.42), transparent 70%),
-                radial-gradient(60% 42% at 0% 55%, rgba(20,184,166,.22), transparent 70%),
-                radial-gradient(70% 40% at 95% 100%, rgba(132,204,22,.18), transparent 70%), #06100d;
+    --bg-layer: radial-gradient(70% 45% at 88% 0%, rgba(16,185,129,.42), transparent 70%),
+                radial-gradient(60% 42% at 0% 50%, rgba(20,184,166,.20), transparent 70%),
+                radial-gradient(75% 42% at 100% 100%, rgba(255,190,0,.20), transparent 70%),
+                radial-gradient(50% 30% at 10% 100%, rgba(16,185,129,.16), transparent 70%), #06100d;
     --bg-overlay: none;
     --top-bg: linear-gradient(180deg, rgba(6,16,13,.88) 0%, rgba(6,16,13,.55) 70%, rgba(6,16,13,0) 100%);
     --tab-bg: linear-gradient(135deg, rgba(28,48,41,.66), rgba(8,18,15,.82));
-    --sheet-bg: linear-gradient(160deg, rgba(24,44,37,.92), rgba(7,16,13,.97));
+    --sheet-bg: linear-gradient(160deg, rgba(24,44,37,.93), rgba(7,16,13,.97));
     --toast-bg: linear-gradient(135deg, rgba(30,52,44,.94), rgba(10,22,18,.97));
     --input-bg: rgba(0,0,0,.28); --seg-bg: rgba(0,0,0,.25); --seg-on: rgba(255,255,255,.12);
     --float-shadow: 0 16px 40px rgba(0,0,0,.55);
@@ -277,14 +225,6 @@
   .chip.on { background: rgba(var(--acc-rgb),.18); border-color: rgba(var(--acc-rgb),.6); color: var(--acc-hi); }
   .sheet .seg { margin-bottom: 14px; }
 
-  /* Selector de tema */
-  .temas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
-  .tema { border: 2px solid var(--border); border-radius: 16px; padding: 0; overflow: hidden; background: none; text-align: left; }
-  .tema.on { border-color: var(--acc); }
-  .tema .pv { height: 92px; position: relative; }
-  .tema .pv i { position: absolute; left: 10px; right: 10px; height: 14px; border-radius: 5px; }
-  .tema .n { padding: 8px 10px; font-weight: 700; font-size: 13.5px; }
-
   .toast { position: fixed; left: 16px; right: 16px; z-index: 60; max-width: 528px; margin: 0 auto;
            bottom: calc(env(safe-area-inset-bottom) + var(--tabbar-h) + 22px); color: #fff;
            display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px;
@@ -302,7 +242,6 @@
 
 <header class="top">
   <div><h1 id="title">Inicio</h1><button class="st" id="status"></button></div>
-  <button class="icon-btn" id="temaBtn" aria-label="Tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.4 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15.5" cy="7.5" r="1.2"/></svg></button>
   <div class="loadbar" id="loadbar"></div>
 </header>
 
@@ -833,30 +772,6 @@ function hojaLibre() {
   $('#cancel').onclick = cerrarHoja;
 }
 
-const TEMAS = [
-  ['dorado', 'Dorado', 'linear-gradient(160deg,#2a2112,#08080a 60%)', '#ffd600', 'rgba(255,255,255,.12)'],
-  ['claro', 'Claro', 'linear-gradient(160deg,#fde9b8,#f4f1ea 55%,#d7f3ee)', '#f59e0b', 'rgba(255,255,255,.9)'],
-  ['bosque', 'Bosque', 'linear-gradient(160deg,#0f5a43,#06100d 65%)', '#34d399', 'rgba(255,255,255,.12)']
-];
-function temaActual() { return document.documentElement.getAttribute('data-theme') || 'dorado'; }
-function aplicarTema(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  store.set('hub.tema', t);
-  const claro = t === 'claro';
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', claro ? '#f4f1ea' : t === 'bosque' ? '#06100d' : '#08080a');
-  document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute('content', claro ? 'default' : 'black-translucent');
-  if (vista && tab === 'grafica') renderGrafica();
-}
-function hojaTema() {
-  abrirHoja(`<h3>Tema</h3><div class="f">Se guarda en este teléfono.</div>
-    <div class="temas">${TEMAS.map(([k, n, bg, acc, card]) => `<button class="tema ${k === temaActual() ? 'on' : ''}" data-tema="${k}">
-      <div class="pv" style="background:${bg}"><i style="top:14px;background:${card};width:auto"></i><i style="top:36px;background:${acc};right:40%"></i><i style="top:58px;background:${card}"></i></div>
-      <div class="n">${n}</div></button>`).join('')}</div>
-    <button class="btn plain" id="cancel">Cerrar</button>`);
-  $$('[data-tema]').forEach((b) => b.onclick = () => { aplicarTema(b.dataset.tema); $$('[data-tema]').forEach((x) => x.classList.toggle('on', x === b)); });
-  $('#cancel').onclick = cerrarHoja;
-}
-
 function hojaSaldo() {
   abrirHoja(`
     <h3>Saldo en tu banco</h3>
@@ -951,7 +866,6 @@ function pantallaSetup(aviso) {
 
 // ─── Arranque ────────────────────────────────────────────────
 $('#status').onclick = cargar;
-$('#temaBtn').onclick = hojaTema;
 
 // Deslizar hacia abajo para actualizar
 (() => {

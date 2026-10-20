@@ -4,7 +4,7 @@ PWA personal (GitHub Pages) + backend Apps Script ligado al Sheet de finanzas de
 
 - `apps-script/Motor.gs`: lógica pura (generación de ocurrencias, semanas vie–jue, proyección). Sin SpreadsheetApp, para poder probarla con Node (`vm.runInContext`).
 - `apps-script/Code.gs`: hojas Hub_Pagos / Hub_Config / Hub_Registro, API `doGet` / `doPost` con token.
-- `web/index.html`: toda la app en un archivo (pestañas Inicio / Semanas / Proyección / Movimientos, estilo glassy-dashboard; fondo `bg.jpg`); `sw.js` cachea solo el cascarón.
+- `web/index.html`: toda la app en un archivo (pestañas Inicio / Pagos / Proyección / Movimientos; tema único "Bosque dorado": fondo verde oscuro con acentos dorados, colores en variables CSS de `:root`); `sw.js` cachea solo el cascarón.
 - `widget/pagos-widget.js`: widget de Scriptable (iOS); usa `GET ?corto=1`. El token vive en el Llavero del iPhone, nunca en el archivo.
 - `.github/workflows/pages.yml`: publica `web/` en GitHub Pages (https://jrbernardino.github.io/pagos/) en cada push a `main`. Si cambias archivos del cascarón, sube `CACHE` en `sw.js`.
 
