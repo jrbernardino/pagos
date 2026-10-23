@@ -1,5 +1,5 @@
 // Widget "Pagos" para Scriptable (iOS).
-// Muestra: saldo en banco, cuánto puedes gastar esta semana, cierre al domingo y próximos pagos.
+// Muestra: saldo en banco, cuánto puedes gastar esta semana, cierre al jueves y próximos pagos.
 // Tamaños: pequeño, mediano y pantalla de bloqueo (rectangular / en línea).
 //
 // La primera vez ábrelo dentro de Scriptable: te pide el token (se guarda en el Llavero del iPhone,
@@ -99,7 +99,7 @@ function bloquePrincipal(stack, d) {
   texto(stack, 'LIBRE ESTA SEMANA', 10, GOLD);
   texto(stack, mx(d.libreSemana), 20, d.libreSemana > 0 ? GOLD : ROSE, 'bold');
   stack.addSpacer(4);
-  texto(stack, `Al domingo ${mx(d.alCierre)}`, 11, d.alCierre < d.colchon ? AMBER : MUTED, 'regular');
+  texto(stack, `Al jueves ${mx(d.alCierre)}`, 11, d.alCierre < d.colchon ? AMBER : MUTED, 'regular');
 }
 
 function pie(stack, d) {

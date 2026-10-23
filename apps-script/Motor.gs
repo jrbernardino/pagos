@@ -102,14 +102,14 @@ function generarOcurrencias_(pagos, desde, hasta) {
 }
 
 /**
- * Resumen de la semana de calendario (lunes a domingo) que contiene `hoy`.
- *  - porPagar: pagos pendientes de hoy al domingo + todo lo vencido sin marcar
- *  - porEntrar: ingresos pendientes de hoy al domingo
+ * Resumen de la semana (viernes a jueves, igual que las de pagos) que contiene `hoy`.
+ *  - porPagar: pagos pendientes de hoy al jueves + todo lo vencido sin marcar
+ *  - porEntrar: ingresos pendientes de hoy al jueves
  *  - alCierre: saldo actual − porPagar + porEntrar (los gastos extra ya están restados del saldo)
  *  - gastosExtra / pagado / recibido: lo que ya se registró con fecha dentro de la semana
  */
 function resumenSemana_(pendientes, movs, saldo, hoy) {
-  var inicio = addDays_(hoy, -((dow_(hoy) + 6) % 7));
+  var inicio = inicioSemana_(hoy);
   var fin = addDays_(inicio, 6);
   var r = { inicio: inicio, fin: fin, porPagar: 0, porEntrar: 0, gastosExtra: 0, ingresosExtra: 0, pagado: 0, recibido: 0, pagos: [], gastos: [] };
 
@@ -139,7 +139,7 @@ function resumenSemana_(pendientes, movs, saldo, hoy) {
  * Supone un gasto parejo por día (r): el saldo del día i baja r·(i+1). El r máximo que respeta
  * el colchón en todos los días es min((saldo_i − colchón) / (i+1)).
  *  - porSemana: ritmo sostenible (7·r)
- *  - semana:    lo que toca de hoy al domingo (r · días restantes)
+ *  - semana:    lo que toca de hoy al jueves (r · días restantes)
  *  - limite:    lo máximo que podrías gastar HOY de golpe sin bajar del colchón (mín − colchón)
  *  - cuello:    el día que define el ritmo (normalmente la semana pesada que viene)
  */
@@ -152,7 +152,7 @@ function libreParaGastar_(puntos, colchon, hoy) {
     if (tasa < r) { r = tasa; cuello = puntos[i].fecha; }
     if (puntos[i].saldo < minimo) { minimo = puntos[i].saldo; minFecha = puntos[i].fecha; }
   }
-  var diasSemana = 7 - ((dow_(hoy) + 6) % 7);        // de hoy al domingo, incluyendo hoy
+  var diasSemana = 7 - diffDays_(inicioSemana_(hoy), hoy);   // de hoy al jueves, incluyendo hoy
   var piso10 = function (n) { return Math.max(0, Math.floor(n / 10) * 10); };
   return {
     porDia: Math.max(0, round2_(r)),
@@ -173,15 +173,15 @@ function libreParaGastar_(puntos, colchon, hoy) {
  */
 /**
  * Gasto del día a día que se descuenta en la proyección.
- * Semana de lunes a domingo: en la semana actual se reparte lo que queda del presupuesto
+ * Semana de viernes a jueves: en la semana actual se reparte lo que queda del presupuesto
  * (presupuesto − gastos extra ya registrados) entre los días que faltan; en las demás, presupuesto / 7 por día.
  */
 function gastoVariableDia_(d, hoy, variable) {
   if (!variable || !(variable.semanal > 0)) return 0;
-  var lunesHoy = addDays_(hoy, -((dow_(hoy) + 6) % 7));
-  if (d <= addDays_(lunesHoy, 6)) {
+  var inicio = inicioSemana_(hoy);
+  if (d <= addDays_(inicio, 6)) {
     var resta = Math.max(0, variable.semanal - (variable.gastadoSemana || 0));
-    var dias = 7 - ((dow_(hoy) + 6) % 7);
+    var dias = 7 - diffDays_(inicio, hoy);
     return resta / dias;
   }
   return variable.semanal / 7;

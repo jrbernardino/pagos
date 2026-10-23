@@ -441,14 +441,14 @@ function renderInicio() {
         <div class="k">${pr.excedido ? 'Te pasaste esta semana' : 'Te quedan esta semana'}</div>
         <div class="v num">${pr.excedido ? '−' + money(pr.excedido) : money(pr.queda)}<span class="de"> de ${money(pr.semanal)}</span></div>
         <div class="bar"><i style="width:${pct}%"></i></div>
-        <div class="s">Llevas ${money(pr.gastado)} en gastos del día a día (lun–dom)</div>
+        <div class="s">Llevas ${money(pr.gastado)} en gastos del día a día (vie–jue)</div>
         ${lineaMeta}
       </button>`;
   } else if (l) {
     h += l.faltante
       ? `<button class="libre bad" id="libreBtn"><div class="k">Vas corto</div><div class="v num">−${money(l.faltante)}</div>
            <div class="s">El ${fmt(l.faltanteFecha)} quedarías abajo de tu colchón. Mejor no gastar extra por ahora.</div></button>`
-      : `<button class="libre" id="libreBtn"><div class="k">Puedes gastar · hasta el domingo</div><div class="v num">${money(l.semana)}</div>
+      : `<button class="libre" id="libreBtn"><div class="k">Puedes gastar · hasta el jueves</div><div class="v num">${money(l.semana)}</div>
            <div class="s">Ritmo de ${money(l.porSemana)} por semana sin bajar de tu colchón</div></button>`;
   }
   if (s) {
@@ -460,7 +460,7 @@ function renderInicio() {
     <div class="kpis">
       <div class="kpi"><div class="k">Por pagar</div><div class="v">${money(s.porPagar)}</div></div>
       <div class="kpi"><div class="k">Por entrar</div><div class="v in">+${money(s.porEntrar)}</div></div>
-      <div class="kpi end ${nivelDe(s.alCierre)}"><div class="k">Al domingo</div><div class="v">${money(s.alCierre)}</div></div>
+      <div class="kpi end ${nivelDe(s.alCierre)}"><div class="k">Al jueves</div><div class="v">${money(s.alCierre)}</div></div>
     </div>
     ${pills.length ? `<div class="pills">${pills.join('')}</div>` : ''}`;
   }
@@ -788,7 +788,7 @@ function hojaPlan() {
   const cfgMeta = mt || {};
   abrirHoja(`<div class="explica">
     <h3>Tu plan</h3>
-    <div class="f">Lo que te pongas aquí ya se descuenta en la proyección y en "Al domingo".</div>
+    <div class="f">Lo que te pongas aquí ya se descuenta en la proyección y en "Al jueves".</div>
     <div class="label" style="margin:0 0 6px 4px">Gasto del día a día por semana</div>
     <label class="field"><span>$</span><input id="ppres" inputmode="decimal" value="${pr.semanal}"></label>
     <div class="label" style="margin:0 0 6px 4px">Meta de ahorro</div>
@@ -823,7 +823,7 @@ function hojaLibre() {
     <h3>¿De dónde sale?</h3>
     <div class="f">Ya descuenta todos tus pagos, la despensa y tu colchón de ${money(vista.colchon)}.</div>
     <p>Si gastas parejo <b>${money(l.porSemana)} por semana</b> (≈ ${money(l.porDia)} al día), tu saldo no baja del colchón en los próximos ${vista.proyeccion.puntos.length - 1} días.</p>
-    <p>De hoy al domingo te tocan <b>${money(l.semana)}</b>. Lo que gastes con el botón + se descuenta solo.</p>
+    <p>De hoy al jueves te tocan <b>${money(l.semana)}</b>. Lo que gastes con el botón + se descuenta solo.</p>
     <p>El día que más te aprieta es el <b>${fmt(l.cuello)}</b>; por eso el número no es más alto.</p>
     <p>Si de plano necesitas, hoy podrías gastar hasta <b>${money(l.limite)}</b> de golpe sin bajar del colchón, pero te quedarías sin margen para lo que sigue.</p>
     </div>

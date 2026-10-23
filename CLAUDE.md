@@ -11,12 +11,12 @@ PWA personal (GitHub Pages) + backend Apps Script ligado al Sheet de finanzas de
 - `.github/workflows/apps-script.yml`: en cada push a `main` que toque `apps-script/`, hace `clasp push` y `clasp deploy` sobre la misma implementación (la URL /exec no cambia). Usa los secretos CLASPRC_JSON, SCRIPT_ID y HUB_TOKEN (prueba de humo). Pages y Apps Script se despliegan por separado, así que el front debe tolerar un backend viejo (campos nuevos opcionales).
 
 Convenciones:
-- Dos tipos de semana: las tarjetas de "Apartar" van de viernes a jueves (día de pago); el resumen del hero ("Esta semana") va de lunes a domingo.
+- Semana única de viernes a jueves (día de pago): tarjetas de "Apartar", resumen del hero ("Esta semana"), presupuesto del día a día y "Puedes gastar".
 - Gastos/ingresos extra (`gasto`, `ingreso_extra`) mueven el saldo al registrarse y se guardan en Hub_Registro con ID `<accion>_<uuid8>`; `deshacer` los revierte.
 - Frecuencias de Hub_Pagos: mensual, bimestral, semanal, semanal_mes, unica. El catálogo se edita desde la app (guardar_pago / borrar_pago).
 - `corto` (POST `corto: true` o GET `?corto=1`) regresa `resumenCorto_`: saldo, porPagar, porEntrar, alCierre, libreSemana, librePorSemana, proximos, mensaje. Lo usan el atajo del Action Button y el widget.
-- "Puedes gastar" (`libreParaGastar_` en Motor.gs): ritmo diario parejo máximo que mantiene la proyección ≥ colchón en todo el horizonte; `semana` = ritmo × días hasta el domingo.
-- Presupuesto del día a día (`presupuesto_semanal` en Hub_Config, default 2000): la proyección principal lo descuenta (lun–dom; en la semana actual solo lo que queda tras los gastos extra). `proyeccionBase` / `libre` se calculan SIN él. "Al domingo" también lo descuenta.
+- "Puedes gastar" (`libreParaGastar_` en Motor.gs): ritmo diario parejo máximo que mantiene la proyección ≥ colchón en todo el horizonte; `semana` = ritmo × días hasta el jueves.
+- Presupuesto del día a día (`presupuesto_semanal` en Hub_Config, default 2000): la proyección principal lo descuenta (vie–jue; en la semana actual solo lo que queda tras los gastos extra). `proyeccionBase` / `libre` se calculan SIN él. "Al jueves" también lo descuenta.
 - Meta de ahorro (`meta_monto`, `meta_fecha` en Hub_Config) → `vista.meta` (`evaluarMeta_`): proyectado en la fecha, diferencia y máximo semanal para lograrla. Se edita con la acción `config`.
 - Fechas siempre como texto `YYYY-MM-DD`; zona America/Mexico_City.
 - ID de ocurrencia = `<idPago>_<YYYY-MM-DD>`; el registro se indexa por ese ID.
