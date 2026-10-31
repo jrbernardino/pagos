@@ -94,11 +94,31 @@ function generarOcurrencias_(pagos, desde, hasta) {
       }
     }
   });
-  out.sort(function (x, y) {
-    if (x.fecha !== y.fecha) return x.fecha < y.fecha ? -1 : 1;
-    return x.concepto < y.concepto ? -1 : 1;
-  });
+  out.sort(ordenOcurrencias_);
   return out;
+}
+
+function ordenOcurrencias_(x, y) {
+  if (x.fecha !== y.fecha) return x.fecha < y.fecha ? -1 : 1;
+  return x.concepto < y.concepto ? -1 : 1;
+}
+
+/**
+ * Cambia la fecha de ocurrencias sueltas ("esta vez me pagan el jueves").
+ * `movidos` = { idOcurrencia: 'YYYY-MM-DD' }. El ID no cambia (sigue con la fecha original);
+ * la ocurrencia lleva `fechaOriginal` para poder regresarla. Devuelve una lista nueva, ordenada.
+ */
+function aplicarMovidos_(ocurrencias, movidos) {
+  if (!movidos) return ocurrencias;
+  return ocurrencias.map(function (o) {
+    var f = movidos[o.id];
+    if (!f || f === o.fecha) return o;
+    var c = {};
+    for (var k in o) c[k] = o[k];
+    c.fechaOriginal = o.fecha;
+    c.fecha = f;
+    return c;
+  }).sort(ordenOcurrencias_);
 }
 
 /**

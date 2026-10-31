@@ -20,5 +20,6 @@ Convenciones:
 - Meta de ahorro (`meta_monto`, `meta_fecha` en Hub_Config) → `vista.meta` (`evaluarMeta_`): proyectado en la fecha, diferencia y máximo semanal para lograrla. Se edita con la acción `config`.
 - Fechas siempre como texto `YYYY-MM-DD`; zona America/Mexico_City.
 - ID de ocurrencia = `<idPago>_<YYYY-MM-DD>`; el registro se indexa por ese ID.
+- Mover una sola ocurrencia (acción `mover`, id + fecha): fila en Hub_Registro con acción `movido` y la fecha nueva en Vence; el ID conserva la fecha original y la ocurrencia trae `fechaOriginal`. Moverla a su fecha original borra la fila. No entra en `porId` ni en `recientes`; al pagar/recibir, Vence usa la fecha movida.
 - Gastos de casa se pagan al 100%; el 25% de Tania entra como ingreso quincenal.
 - POST con `Content-Type: text/plain` para evitar el preflight de CORS en Apps Script.

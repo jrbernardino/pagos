@@ -23,3 +23,6 @@
 - Temas: Dorado (original), Claro y Bosque, con selector (ícono de paleta en el encabezado). Se quitó el morado: 'personal' ahora es azul (dorado/claro) o ámbar (bosque). Todos los colores pasan por variables CSS por tema.
 - Tema único "Bosque dorado" (fondo verde oscuro + acentos dorados). Se quitaron el selector de temas y bg.jpg.
 - Presupuesto semanal del día a día ($2,000) descontado en la proyección y en 'Al domingo'; tarjeta 'Te quedan esta semana' con barra. Meta de ahorro (monto + fecha) editable desde la tarjeta, con cuánto llegas y el máximo semanal para lograrla; marcada en la gráfica.
+
+## 2026-10-31
+- Mover la fecha de un pago o ingreso solo esta vez (ej. la nómina cae en jueves en vez de viernes): en la hoja del pago, "Solo esta vez llega/se paga otro día" → Mover a esta fecha / Regresar. Backend: acción `mover` (registro `movido` en Hub_Registro, `aplicarMovidos_` en Motor.gs). Se puede mover hasta 2 meses, también algo de después del horizonte hacia adentro. sw → pagos-v15.

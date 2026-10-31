@@ -9,6 +9,7 @@
  * API (desplegar como Web App: ejecutar como "Yo", acceso "Cualquier usuario"):
  *   GET  ?token=...&action=data
  *   POST {token, action: 'pagar'|'recibir'|'omitir'|'deshacer'|'saldo', id?, monto?}
+ *   POST {token, action: 'mover', id, fecha}  → cambia la fecha de una sola ocurrencia (fecha original = la regresa)
  */
 
 var HOJA_PAGOS = 'Hub_Pagos';
@@ -161,6 +162,7 @@ function doPost(e) {
         case 'recibir': registrar_(body.id, 'recibido', body.monto); break;
         case 'omitir': registrar_(body.id, 'omitido', 0); break;
         case 'deshacer': deshacer_(body.id); break;
+        case 'mover': moverOcurrencia_(body.id, body.fecha); break;
         case 'saldo': ajustarSaldo_(body.monto); break;
         case 'gasto': movimientoExtra_('gasto', body.concepto, body.monto, body.fecha); break;
         case 'ingreso_extra': movimientoExtra_('ingreso_extra', body.concepto, body.monto, body.fecha); break;
@@ -203,8 +205,9 @@ function obtenerVista_() {
   var desde = cfg.inicio_hub > addDays_(hoy, -45) ? cfg.inicio_hub : addDays_(hoy, -45);
 
   var registro = leerRegistro_();
-  var pendientes = generarOcurrencias_(leerPagos_(), desde, hasta)
-    .filter(function (o) { return !registro.porId[o.id]; });
+  // se genera un poco más allá del horizonte por si algo de después se movió para antes
+  var pendientes = aplicarMovidos_(generarOcurrencias_(leerPagos_(), desde, addDays_(hasta, 62)), registro.movidos)
+    .filter(function (o) { return !registro.porId[o.id] && o.fecha <= hasta; });
 
   var saldo = parseFloat(cfg.saldo) || 0;
   var colchon = parseFloat(cfg.colchon) || 0;
@@ -238,7 +241,7 @@ function obtenerVista_() {
       dias: p.dias, inicio: p.inicio, fin: p.fin, activo: p.activo, nota: p.nota, siguiente: sig ? sig.fecha : ''
     };
   });
-  vista.recientes = registro.filas.slice(-30).reverse().map(function (r) {
+  vista.recientes = registro.filas.filter(function (r) { return r.accion !== 'movido'; }).slice(-30).reverse().map(function (r) {
     return { id: r.id, concepto: r.concepto, monto: r.monto, vence: r.vence, accion: r.accion };
   });
   return vista;
@@ -252,7 +255,7 @@ function registrar_(occId, accion, monto) {
   if (registro.porId[occId]) throw new Error('Ya estaba registrado');
 
   var pagoId = occId.slice(0, -11);
-  var fecha = occId.slice(-10);
+  var fecha = registro.movidos[occId] || occId.slice(-10);
   var pago = leerPagos_().filter(function (p) { return p.id === pagoId; })[0];
   if (!pago) throw new Error('No existe el pago ' + pagoId);
 
@@ -279,6 +282,32 @@ function deshacer_(occId) {
   if (r.accion === 'recibido' || r.accion === 'ingreso_extra') saldo = round2_(saldo - r.monto);
   escribirConfig_('saldo', String(saldo));
   sr.deleteRow(r.fila);
+}
+
+/**
+ * Mueve una sola ocurrencia a otra fecha (no toca el catálogo ni el saldo).
+ * Se guarda en Hub_Registro con acción 'movido' y la fecha nueva en "Vence"; moverla a su fecha original la regresa.
+ */
+function moverOcurrencia_(occId, fecha) {
+  occId = String(occId || '');
+  var iso = /^\d{4}-\d{2}-\d{2}$/;
+  if (!iso.test(occId.slice(-10))) throw new Error('Falta la ocurrencia');
+  var f = String(fecha || '').trim();
+  if (!iso.test(f)) throw new Error('Fecha inválida');
+  var registro = leerRegistro_();
+  if (registro.porId[occId]) throw new Error('Ya está registrado; deshazlo primero');
+  var pagoId = occId.slice(0, -11);
+  var pago = leerPagos_().filter(function (p) { return p.id === pagoId; })[0];
+  if (!pago) throw new Error('No existe el pago ' + pagoId);
+  var original = occId.slice(-10);
+  if (Math.abs(diffDays_(original, f)) > 62) throw new Error('Solo se puede mover hasta 2 meses');
+
+  var sr = hojaReg_();
+  var fila = registro.filasMovido[occId];
+  if (fila) sr.deleteRow(fila);
+  if (f === original) return;
+  var saldo = parseFloat(leerConfig_().saldo) || 0;
+  sr.appendRow([new Date(), occId, pago.concepto, pago.monto, f, 'movido', saldo]);
 }
 
 /** Gasto o ingreso que no está en Hub_Pagos (comida, gasolina, un pago extra...). Mueve el saldo al momento. */
@@ -449,7 +478,7 @@ function leerRegistro_() {
   var sh = hojaReg_();
   if (!sh) throw new Error('Falta la hoja ' + HOJA_REG + ' (corre setup)');
   var v = sh.getDataRange().getValues();
-  var porId = {}, filas = [];
+  var porId = {}, filas = [], movidos = {}, filasMovido = {};
   for (var i = 1; i < v.length; i++) {
     var r = v[i];
     if (!r[1]) continue;
@@ -463,9 +492,10 @@ function leerRegistro_() {
       accion: String(r[5])
     };
     filas.push(item);
-    if (item.accion !== 'ajuste') porId[item.id] = item;
+    if (item.accion === 'movido') { movidos[item.id] = item.vence; filasMovido[item.id] = item.fila; }
+    else if (item.accion !== 'ajuste') porId[item.id] = item;
   }
-  return { porId: porId, filas: filas };
+  return { porId: porId, filas: filas, movidos: movidos, filasMovido: filasMovido };
 }
 
 function hoyIso_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }

@@ -411,7 +411,7 @@ function fila(o) {
   const cls = d < 0 ? 'late' : d <= 2 ? 'soon' : '';
   return `<button class="row" data-id="${esc(o.id)}">
     <span class="ic ${esc(o.tipo)}">${inicial(o.concepto)}</span>
-    <span class="mid"><span class="c">${esc(o.concepto)}</span><span class="f">${fmt(o.fecha)}</span></span>
+    <span class="mid"><span class="c">${esc(o.concepto)}</span><span class="f">${fmt(o.fecha)}${o.fechaOriginal ? ' · movido' : ''}</span></span>
     <span class="m num ${ing ? 'in' : ''}">${ing ? '+' : ''}${money(o.monto)}<span class="w ${cls}">${cuando}</span></span>
   </button>`;
 }
@@ -769,10 +769,14 @@ function hojaItem(id) {
   const ing = o.tipo === 'ingreso';
   abrirHoja(`
     <h3>${esc(o.concepto)}</h3>
-    <div class="f">${fmt(o.fecha)} · ${ing ? 'Ingreso' : o.tipo === 'casa' ? 'Casa (pagas 100%)' : 'Personal'}</div>
+    <div class="f">${fmt(o.fecha)}${o.fechaOriginal ? ` (movido del ${fmt(o.fechaOriginal)})` : ''} · ${ing ? 'Ingreso' : o.tipo === 'casa' ? 'Casa (pagas 100%)' : 'Personal'}</div>
     <label class="field"><span>$</span><input id="monto" inputmode="decimal" value="${o.monto}"></label>
     <button class="btn primary" id="ok">${ing ? 'Marcar recibido' : 'Marcar pagado'}</button>
     <button class="btn ghost" id="skip">${ing ? 'No llegó / omitir' : 'Omitir esta vez'}</button>
+    <div class="label" style="margin:8px 0 6px 4px">Solo esta vez ${ing ? 'llega' : 'se paga'} otro día</div>
+    <label class="field"><input id="fmov" class="txt" type="date" value="${o.fecha}"></label>
+    <button class="btn ghost" id="mover">Mover a esta fecha</button>
+    ${o.fechaOriginal ? `<button class="btn ghost" id="regresar">Regresar al ${fmt(o.fechaOriginal)}</button>` : ''}
     <button class="btn plain" id="cancel">Cancelar</button>`);
   $('#ok').onclick = () => {
     const m = parseFloat(String($('#monto').value).replace(/[^0-9.]/g, ''));
@@ -780,6 +784,14 @@ function hojaItem(id) {
     accion({ action: ing ? 'recibir' : 'pagar', id, monto: m }, `${o.concepto} · ${ing ? 'recibido' : 'pagado'}`, id);
   };
   $('#skip').onclick = () => accion({ action: 'omitir', id }, `${o.concepto} · omitido`, id);
+  const original = o.fechaOriginal || o.fecha;
+  $('#mover').onclick = () => {
+    const f = $('#fmov').value;
+    if (!f) return $('#fmov').focus();
+    if (f === o.fecha) return cerrarHoja();
+    accion({ action: 'mover', id, fecha: f }, `${o.concepto} · ${f === original ? 'de vuelta al' : 'movido al'} ${fmt(f)}`, { action: 'mover', id, fecha: o.fecha });
+  };
+  if (o.fechaOriginal) $('#regresar').onclick = () => accion({ action: 'mover', id, fecha: original }, `${o.concepto} · de vuelta al ${fmt(original)}`, { action: 'mover', id, fecha: o.fecha });
   $('#cancel').onclick = cerrarHoja;
 }
 
@@ -898,10 +910,11 @@ function hojaMov(id) {
 
 // ─── Toast ───────────────────────────────────────────────────
 let toastTimer;
-function toast(msg, undoId) {
+// undo: ID de ocurrencia (→ deshacer) o el cuerpo completo de la acción que lo revierte
+function toast(msg, undo) {
   $('#toastMsg').textContent = msg;
-  $('#toastUndo').style.display = undoId ? '' : 'none';
-  $('#toastUndo').onclick = () => { $('#toast').classList.remove('on'); accion({ action: 'deshacer', id: undoId }, 'Deshecho'); };
+  $('#toastUndo').style.display = undo ? '' : 'none';
+  $('#toastUndo').onclick = () => { $('#toast').classList.remove('on'); accion(typeof undo === 'string' ? { action: 'deshacer', id: undo } : undo, 'Deshecho'); };
   $('#toast').classList.add('on');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => $('#toast').classList.remove('on'), 4500);
