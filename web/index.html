@@ -874,6 +874,7 @@ function hojaGasto() {
     <div class="chips" id="chips">${CATEGORIAS.map((c) => `<button class="chip" data-cat="${c}">${c}</button>`).join('')}</div>
     <label class="field"><input id="concepto" class="txt" placeholder="¿En qué fue?" maxlength="80"></label>
     <label class="field"><input id="fecha" class="txt" type="date" value="${hoyLocal()}"></label>
+    <div class="f" id="futuro" style="display:none;margin:-4px 4px 12px">Fecha futura: se programa en tus pagos y no toca tu saldo hasta que lo marques.</div>
     <button class="btn primary" id="ok">Guardar</button>
     <button class="btn plain" id="cancel">Cancelar</button>`);
   $$('[data-modo]').forEach((b) => b.onclick = () => {
@@ -891,8 +892,16 @@ function hojaGasto() {
     const m = parseFloat(String($('#monto').value).replace(/[^0-9.]/g, ''));
     if (!(m > 0)) { $('#monto').focus(); return; }
     const concepto = $('#concepto').value.trim();
-    accion({ action: modo, monto: m, concepto, fecha: $('#fecha').value }, `${concepto || (modo === 'gasto' ? 'Gasto' : 'Ingreso')} · ${money(m)}`);
+    const fecha = $('#fecha').value;
+    // algo que todavía no pasa no debe mover el saldo: se programa como pago/ingreso único
+    if (fecha && fecha > vista.hoy) {
+      const nombre = concepto || (modo === 'gasto' ? 'Gasto' : 'Ingreso extra');
+      return accion({ action: 'guardar_pago', pago: { concepto: nombre, monto: m, tipo: modo === 'gasto' ? 'personal' : 'ingreso', frecuencia: 'unica', inicio: fecha, activo: true } },
+        `${nombre} · programado para el ${fmt(fecha)}`);
+    }
+    accion({ action: modo, monto: m, concepto, fecha }, `${concepto || (modo === 'gasto' ? 'Gasto' : 'Ingreso')} · ${money(m)}`);
   };
+  $('#fecha').onchange = () => { $('#futuro').style.display = $('#fecha').value > vista.hoy ? '' : 'none'; };
   $('#cancel').onclick = cerrarHoja;
 }
 

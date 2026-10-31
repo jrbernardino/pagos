@@ -12,7 +12,7 @@ PWA personal (GitHub Pages) + backend Apps Script ligado al Sheet de finanzas de
 
 Convenciones:
 - Semana única de viernes a jueves (día de pago): tarjetas de "Apartar", resumen del hero ("Esta semana"), presupuesto del día a día y "Puedes gastar".
-- Gastos/ingresos extra (`gasto`, `ingreso_extra`) mueven el saldo al registrarse y se guardan en Hub_Registro con ID `<accion>_<uuid8>`; `deshacer` los revierte.
+- Gastos/ingresos extra (`gasto`, `ingreso_extra`, solo con fecha de hoy o pasada; con fecha futura el front los manda como `guardar_pago` única) mueven el saldo al registrarse y se guardan en Hub_Registro con ID `<accion>_<uuid8>`; `deshacer` los revierte.
 - Frecuencias de Hub_Pagos: mensual, bimestral, semanal, semanal_mes, unica. El catálogo se edita desde la app (guardar_pago / borrar_pago).
 - `corto` (POST `corto: true` o GET `?corto=1`) regresa `resumenCorto_`: saldo, porPagar, porEntrar, alCierre, libreSemana, librePorSemana, proximos, mensaje. Lo usan el atajo del Action Button y el widget.
 - "Puedes gastar" (`libreParaGastar_` en Motor.gs): ritmo diario parejo máximo que mantiene la proyección ≥ colchón en todo el horizonte; `semana` = ritmo × días hasta el jueves.

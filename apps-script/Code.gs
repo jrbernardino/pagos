@@ -316,6 +316,7 @@ function movimientoExtra_(accion, concepto, monto, fecha) {
   if (!(m > 0)) throw new Error('Monto inválido');
   var c = String(concepto || '').trim().slice(0, 80) || (accion === 'gasto' ? 'Gasto' : 'Ingreso extra');
   var f = /^\d{4}-\d{2}-\d{2}$/.test(String(fecha || '')) ? String(fecha) : hoyIso_();
+  if (f > hoyIso_()) throw new Error('Esa fecha todavía no llega; prográmalo como pago único');
 
   var saldo = parseFloat(leerConfig_().saldo) || 0;
   saldo = round2_(accion === 'gasto' ? saldo - m : saldo + m);

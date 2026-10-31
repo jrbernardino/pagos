@@ -26,3 +26,4 @@
 
 ## 2026-10-31
 - Mover la fecha de un pago o ingreso solo esta vez (ej. la nómina cae en jueves en vez de viernes): en la hoja del pago, "Solo esta vez llega/se paga otro día" → Mover a esta fecha / Regresar. Backend: acción `mover` (registro `movido` en Hub_Registro, `aplicarMovidos_` en Motor.gs). Se puede mover hasta 2 meses, también algo de después del horizonte hacia adentro. sw → pagos-v15.
+- Botón + con fecha futura: ya no suma/resta al saldo al momento; se programa como pago/ingreso único en Hub_Pagos (aviso en la hoja). El backend rechaza `gasto` / `ingreso_extra` con fecha futura. sw → pagos-v16.
